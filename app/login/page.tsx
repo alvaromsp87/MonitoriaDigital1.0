@@ -5,10 +5,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
-import { Eye, EyeOff, Sun, Moon } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { useTheme } from "../context/ThemeContext"; // importe o hook
+import { useTheme } from "../context/ThemeContext";
+import ThemeToggleButton from "../components/ThemeToggleButton";
 
 interface LoginResponse {
   role: "admin" | "monitor" | "aluno";
@@ -22,7 +23,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [resetSent, setResetSent] = useState(false);
   const [showReset, setShowReset] = useState(false);
-  const { darkMode, toggleDarkMode } = useTheme(); // use o estado global
+  const { darkMode } = useTheme();
   const router = useRouter();
   const { login } = useAuth();
 
@@ -78,7 +79,7 @@ export default function Login() {
 
   return (
     <div
-      className={`flex items-center justify-center min-h-screen transition-colors duration-300 ${
+      className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
         darkMode ? "bg-gray-900" : "bg-blue-100"
       }`}
     >
@@ -87,16 +88,14 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className={`relative p-6 rounded-3xl shadow-2xl w-full max-w-md ${
-          darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+          darkMode
+            ? "bg-gray-800 text-white shadow-gray-900/50"
+            : "bg-white text-gray-900 shadow-gray-300/50"
         }`}
       >
-        <button
-          className="absolute top-4 right-4 text-xl"
-          onClick={toggleDarkMode}
-          aria-label="Alternar modo escuro"
-        >
-          {darkMode ? <Sun className="text-yellow-300" /> : <Moon className="text-gray-600" />}
-        </button>
+        <div className="absolute top-4 right-4">
+          <ThemeToggleButton />
+        </div>
 
         <div className="flex justify-center mb-4">
           <Image
@@ -104,7 +103,7 @@ export default function Login() {
             alt="Logo Monitoria Digital"
             width={140}
             height={140}
-            className={darkMode ? "brightness-75 contrast-125" : "brightness-100"}
+            className={darkMode ? "brightness-90" : "brightness-100"}
           />
         </div>
 
@@ -120,7 +119,11 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Digite seu e-mail"
-                className="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-300 focus:outline-none text-black"
+                className={`w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-300 focus:outline-none ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    : "bg-white border-gray-300 text-black placeholder-gray-500"
+                }`}
                 required
               />
             </div>
@@ -135,13 +138,19 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Digite sua senha"
-                className="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-300 focus:outline-none pr-10 text-black"
+                className={`w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-300 focus:outline-none pr-10 ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    : "bg-white border-gray-300 text-black placeholder-gray-500"
+                }`}
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-[38px] text-gray-500"
+                className={`absolute right-2 top-[38px] ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
                 tabIndex={-1}
                 aria-label="Mostrar ou ocultar senha"
               >

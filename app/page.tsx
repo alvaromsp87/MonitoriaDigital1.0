@@ -10,6 +10,9 @@ import {
   PlusIcon,
   MinusIcon,
 } from "@heroicons/react/24/outline";
+import { Sun, Moon } from "lucide-react";
+import { useTheme } from "./context/ThemeContext";
+import ThemeToggleButton from "./components/ThemeToggleButton";
 
 // Definição das seções para os botões expansíveis
 const featureSections = [
@@ -57,12 +60,16 @@ export default function LandingPage() {
     }));
   };
 
-
+  const { darkMode } = useTheme();
 
   return (
-   <div className="min-h-screen flex flex-col">
+    <div className={`min-h-screen bg-[var(--background)] text-[var(--foreground)]`}>
+      <div className="absolute top-4 right-4">
+        <ThemeToggleButton />
+      </div>
+
       {/* Barra de Navegação */}
-      <nav className="bg-fundo text-titulo shadow-md py-4 px-6">
+      <nav className="bg-[var(--card)] text-[var(--card-foreground)] shadow-md py-4 px-6">
         <div className="container mx-auto flex justify-between items-center">
           {/* Logo */}
           <h1 className="text-2xl font-bold">Monitoria Digital</h1>
@@ -187,15 +194,15 @@ export default function LandingPage() {
       </nav>
 
       {/* Seção do Hero */}
-      <section className="bg-fundo py-16 px-6">
+      <section className="bg-[var(--background)] py-16 px-6">
         <div className="container mx-auto">
           <div className="flex flex-col lg:flex-row items-center">
             {/* Textos do Hero - Lado Esquerdo */}
             <div className="lg:w-1/2 mb-10 lg:mb-0">
-              <h1 className="text-4xl md:text-5xl font-bold text-titulo leading-tight mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold text-[var(--foreground)] leading-tight mb-6">
               Bem-vindo a Monitoria Digital, uma plataforma para gerenciar monitorias.
               </h1>
-              <p className="text-paragrafo text-lg mb-8">
+              <p className="text-[var(--muted-foreground)] text-lg mb-8">
               Faça o acompanhamento e controle de o desempenho dos alunos e agende suas atividades. 
               Nosso sistema oferece uma experiência intuitiva e eficiente para monitores e alunos.
               </p>
@@ -206,9 +213,9 @@ export default function LandingPage() {
               {/* Placeholder para imagem - substitua pelo URL correto */}
               <div className="rounded-lg overflow-hidden shadow-xl">
                 {/* TODO: Substituir pelo componente de imagem/vídeo real */}
-                <div className="bg-secundario h-64 md:h-80 flex items-center justify-center text-fundo">
+                <div className="bg-[var(--card)] h-64 md:h-80 flex items-center justify-center">
                   {/* Substituir por uma imagem real */}
-                  <Image src={"/tela-aluno.png"} width={600} height={400} alt="Aula ao vivo"/>
+                  <Image src={"/tela-aluno.png"} width={600} height={400} alt="Aula ao vivo" className="object-cover"/>
                   {/* Exemplo: <Image src="/hero-image.jpg" alt="Plataforma Monitoria Digital" width={600} height={400} /> */}
                 </div>
               </div>
@@ -218,27 +225,27 @@ export default function LandingPage() {
       </section>
 
       {/* Seção de Recursos com Botões Expansíveis */}
-      <section className="py-16 px-6 bg-gray-50">
+      <section className="py-16 px-6 bg-[var(--secondary)]">
         <div className="container mx-auto">
           <div className="flex flex-col lg:flex-row">
             {/* Coluna de Botões Expansíveis */}
             <div className="lg:w-1/2 mb-10 lg:mb-0">
               <div className="space-y-4">
                 {featureSections.map((section) => (
-                  <div key={section.id} className="border rounded-md overflow-hidden bg-fundo shadow-sm">
+                  <div key={section.id} className="border border-[var(--border)] rounded-md overflow-hidden bg-[var(--card)] shadow-sm">
                     <button
-                      className="w-full text-left px-4 py-3 flex justify-between items-center font-medium text-titulo hover:bg-gray-50 transition"
+                      className="w-full text-left px-4 py-3 flex justify-between items-center font-medium text-[var(--foreground)] hover:bg-[var(--accent)] transition"
                       onClick={() => toggleSection(section.id)}
                     >
                       <span>{section.title}</span>
                       {expandedSections[section.id] ? (
-                        <MinusIcon className="h-5 w-5 text-destaque" />
+                        <MinusIcon className="h-5 w-5 text-[var(--primary)]" />
                       ) : (
-                        <PlusIcon className="h-5 w-5 text-destaque" />
+                        <PlusIcon className="h-5 w-5 text-[var(--primary)]" />
                       )}
                     </button>
                     {expandedSections[section.id] && (
-                      <div className="px-4 py-3 border-t border-gray-100 text-paragrafo">
+                      <div className="px-4 py-3 border-t border-[var(--border)] text-[var(--muted-foreground)]">
                         <p>{section.description}</p>
                       </div>
                     )}
@@ -250,9 +257,8 @@ export default function LandingPage() {
             {/* Coluna de Imagem/iframe */}
             <div className="lg:w-1/2 lg:pl-10">
               {/* Placeholder/sombra para screenshot do sistema */}
-              <div className="bg-fundo p-2 rounded-lg border shadow-lg">
-                {/*Substituir pelo iframe ou imagem real */}
-                <Image src={"/Homepage_2.png"} alt="Plataforma Monitoria Digital" width={600} height={400}/>
+              <div className="bg-[var(--card)] p-2 rounded-lg border border-[var(--border)] shadow-lg">
+                <Image src={"/Homepage_2.png"} alt="Plataforma Monitoria Digital" width={600} height={400} className="rounded-lg"/>
               </div>
             </div>
           </div>
@@ -260,17 +266,17 @@ export default function LandingPage() {
       </section>
 
       {/* Seção de CTA */}
-      <section className="py-16 px-6 bg-destaque text-fundo">
+      <section className="py-16 px-6 bg-[var(--primary)] text-[var(--primary-foreground)]">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">
             Transforme seus estudos agora
           </h2>
-          <p className="text-lg mb-8 max-w-2xl mx-auto">
+          <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
             Conecte-se com seus alunos e monitores em potenciais e em tempo real, aumente seu desempenho acadêmico e acelere o seu aprendizado.
           </p>
           <Link
             href="/login"
-            className="bg-fundo text-destaque px-8 py-4 rounded-md hover:bg-gray-100 transition inline-block text-lg font-medium"
+            className="bg-[var(--card)] text-[var(--primary)] px-8 py-4 rounded-md hover:opacity-90 transition inline-block text-lg font-medium"
           >
             Conecte-se agora
           </Link>
@@ -278,7 +284,7 @@ export default function LandingPage() {
       </section>
 
       {/* Rodapé */}
-      <footer className="bg-titulo text-fundo py-12 px-6">
+      <footer className="bg-[var(--card)] text-[var(--card-foreground)] py-12 px-6 border-t border-[var(--border)]">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Coluna 1 - Logo e Informações */}
