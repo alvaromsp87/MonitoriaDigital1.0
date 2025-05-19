@@ -9,4 +9,9 @@ declare global {
   }
   
   export {};
-  
+  export {};
+
+declare global {
+  var usuarios: any[];
+  var idCounter: number;
+}
