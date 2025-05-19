@@ -22,8 +22,9 @@ export default function CalendarioAgendamento() {
       });
   }, [dataSelecionada]);
 
-  const handleDataChange = (value: Date | Date[]) => {
-    console.log('handleDataChage camado com:', value);
+  const handleDataChange = (value: Date | Date[] | null, event?: React.MouseEvent<HTMLButtonElement>) => {
+    console.log('handleDataChange chamado com:', value, event);
+    if (!value) return; // Se for null, não faz nada
     if (Array.isArray(value)) {
       setDataSelecionada(value[0]);
     } else {
