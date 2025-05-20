@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggleButton from './ThemeToggleButton';
 
 type NavbarProps = {
   userType: 'admin' | 'monitor' | 'student';
@@ -32,7 +33,7 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
     }
   };
 
-  // Lista de links ÚNICA e CORRETA
+  // Lista de links
   const links: Record<'admin' | 'monitor' | 'student', LinkItem[]> = {
     admin: [
       { href: '/admin/dashboard', label: 'Dashboard' },
@@ -40,74 +41,60 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
       { href: '/admin/feedbacks', label: 'Feedbacks' },
       { href: '/admin/monitoria', label: 'Cadastrar Monitorias' },
       { href: '/admin/Forum', label: 'Forum' },
-      { href: '#', label: 'Sair', extra: 'mt-4 hover:bg-red-600' }, // Alterado para #
+      { href: '#', label: 'Sair', extra: 'mt-4 hover:bg-red-600' },
     ],
     monitor: [
       { href: '/monitor/dashboard', label: 'Dashboard' },
       { href: '/monitor/agenda', label: 'Agenda' },
       { href: '/monitor/monitoria', label: 'Monitorias' },
       { href: '/monitor/Forum', label: 'Forum' },
-      { href: '#', label: 'Sair' }, // Alterado para #
+      { href: '#', label: 'Sair', extra: 'mt-4 hover:bg-red-600' },
     ],
     student: [
       { href: '/User/dashboard', label: 'Dashboard' },
       { href: '/User/agenda', label: 'Agenda' },
       { href: '/User/monitoria', label: 'Monitorias' },
       { href: '/User/Forum', label: 'Forum' },
-      { href: '#', label: 'Sair' }, // Alterado para #
+      { href: '#', label: 'Sair', extra: 'mt-4 hover:bg-red-600' },
     ],
   };
 
-  // Função de logout ÚNICA
-  const handleLogout = () => {
-    logout();
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    
-    // Força limpeza do cache e redirecionamento
-    window.location.href = '/login'; // Substitui o router.push
-    // Ou alternativamente:
-    // router.replace('/login');
-    // window.location.reload();
-  };
-
-  // Função renderLinks ÚNICA e CORRETA
   const renderLinks = () => {
-    return links[userType].map(({ href, label, extra = '' }) => {
-      if (label === 'Sair') {
-        return (
-          <button
-            key="logout"
-            onClick={handleLogout}
-            className={`w-full text-left px-4 py-2 rounded hover:bg-opacity-80 transition ${extra}`}
-          >
-            {label}
-          </button>
-        );
-      }
-      
-      return (
-        <Link
-          key={href}
-          href={href}
-          className={`block px-4 py-2 rounded hover:bg-opacity-80 transition ${extra}`}
-        >
-          {label}
-        </Link>
-      );
-    });
+    return links[userType].map(({ href, label, extra }, index) => (
+      <Link
+        key={index}
+        href={href}
+        onClick={(e) => {
+          if (label === 'Sair') {
+            e.preventDefault();
+            logout();
+            router.push('/login');
+          }
+        }}
+        className={`block px-4 py-2 text-white ${extra || 'hover:bg-gray-800'}`}
+      >
+        {label}
+      </Link>
+    ));
   };
 
   return (
     <>
-      {!isOpen && (
-        <div className={`fixed top-0 left-0 w-full flex items-center justify-between p-4 z-50 text-white ${getNavbarColor()}`}>
-          <button onClick={toggleMenu}>
-            <Menu className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-bold">Monitoria Digital</h1>
+      <div className="fixed inset-x-0 top-0 z-50">
+        <div className={`${getNavbarColor()} flex justify-between items-center p-4`}>
+          <div className="flex-1">
+            <button onClick={toggleMenu} className="text-white">
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="flex-1 text-center">
+            <h1 className="text-white text-xl font-bold">Monitoria Digital</h1>
+          </div>
+          <div className="flex-1 flex justify-end">
+            <ThemeToggleButton />
+          </div>
         </div>
-      )}
+      </div>
 
       <AnimatePresence>
         {isOpen && (
@@ -136,7 +123,9 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              <nav className="space-y-3">{renderLinks()}</nav>
+              <nav className="space-y-3">
+                {renderLinks()}
+              </nav>
             </motion.div>
           </>
         )}
