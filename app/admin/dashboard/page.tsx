@@ -2,6 +2,7 @@
 import Navbar from '../../components/Navbar'; // Caminho correto para Navbar
 import { useEffect, useRef } from "react"; // Importa hooks necessários do React
 import Chart from "chart.js/auto"; // Importa o Chart.js para criação de gráficos
+import CalendarioAgendamento from '@/app/components/calendarioAgendamento';
 
 export default function Dashboard() {
   const userType: 'admin' | 'monitor' | 'student' = 'admin'; // Defina corretamente o tipo de usuário
@@ -72,7 +73,7 @@ export default function Dashboard() {
               <h5 className="text-lg font-semibold mb-4">Agenda de Monitorias</h5>
               {/* Placeholder para o calendário de monitorias */}
               <div className="flex justify-center items-center bg-gray-100 border h-52 text-gray-500 text-lg">
-                Calendário Placeholder
+              <CalendarioAgendamento/>
               </div>
             </div>
 
