@@ -58,29 +58,29 @@ export default function Dashboard() {
 
   return (
     <div className="flex">
-      <Navbar userType={userType} /> {/* Passando a prop userType corretamente */}
+      <Navbar userType={userType} />
       <div className="container mx-auto px-4 py-6 flex-1">
         {/* Conteúdo Principal */}
-        <div className="flex-1 p-10">
+        <div className="flex-1 p-10 flex flex-col items-center justify-center">
           {/* Título da página */}
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Bem-vindo ao Dashboard</h2>
+          <h2 className="text-2xl font-semibold text-[var(--foreground)] mb-6 text-center mt-4 md:mt-8">
+            Bem-vindo ao Dashboard
+          </h2>
 
           {/* Layout em grid para exibir dois cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
             {/* Card da Agenda */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h5 className="text-lg font-semibold mb-4">Agenda de Monitorias</h5>
-              {/* Placeholder para o calendário de monitorias */}
-              <div className="flex justify-center items-center bg-gray-100 border h-52 text-gray-500 text-lg">
+            <div className="bg-[var(--card)] p-6 rounded-lg shadow-md flex flex-col items-center">
+              <h5 className="text-lg font-semibold mb-4 text-[var(--card-foreground)]">Agenda de Monitorias</h5>
+              <div className="flex justify-center items-center bg-[var(--accent)] border border-[var(--border)] h-52 text-[var(--muted-foreground)] text-lg w-full rounded-md">
                 Calendário Placeholder
               </div>
             </div>
 
             {/* Card do gráfico de desempenho */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h5 className="text-lg font-semibold mb-4">Desempenho dos Alunos</h5>
-              <div className="h-52">
-                {/* Referência para o canvas onde o gráfico será desenhado */}
+            <div className="bg-[var(--card)] p-6 rounded-lg shadow-md flex flex-col items-center">
+              <h5 className="text-lg font-semibold mb-4 text-[var(--card-foreground)]">Desempenho dos Alunos</h5>
+              <div className="h-52 w-full flex justify-center items-center">
                 <canvas ref={chartRef}></canvas>
               </div>
             </div>

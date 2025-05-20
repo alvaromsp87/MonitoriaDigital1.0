@@ -4,7 +4,7 @@ import Footer from './components/footer';
 import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider } from "./context/ThemeContext";
 import FloatingChat from "./components/FloatingChat";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -13,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-[var(--background)] text-[var(--foreground)]">
         <ThemeProvider>
           <AuthProvider>
-            <div className="min-h-screen flex flex-col">
+            <div className="min-h-[92vh] flex flex-col">
               <main className="flex-grow">
                 {children}
               </main>
