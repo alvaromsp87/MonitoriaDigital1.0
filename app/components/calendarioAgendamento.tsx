@@ -23,14 +23,15 @@ export default function CalendarioAgendamento() {
       });
   }, [dataSelecionada]);
 
-  const handleDataChange = (value: CalendarValue, event?: React.MouseEvent<HTMLButtonElement>) => {
-    if (!value) return;
-    if (Array.isArray(value)) {
-      setDataSelecionada(value[0]);
-    } else {
-      setDataSelecionada(value);
-    }
-  };
+  const handleDataChange = (value: any) => {
+  if (!value) return;
+  if (Array.isArray(value)) {
+    setDataSelecionada(value[0]);
+  } else {
+    setDataSelecionada(value);
+  }
+};
+
 
   const agendar = async () => {
     if (!horarioSelecionado) return alert('Escolha um horário!');
