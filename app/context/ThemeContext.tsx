@@ -1,5 +1,5 @@
 "use client"
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface ThemeContextProps {
   darkMode: boolean;
@@ -10,13 +10,35 @@ const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [darkMode, setDarkMode] = useState(false);
-  const toggleDarkMode = () => setDarkMode((prev) => !prev);
+
+  useEffect(() => {
+    // Check if we're in the browser environment
+    if (typeof window !== 'undefined') {
+      // Check system preference
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Get saved preference or use system preference
+      const savedTheme = localStorage.getItem('theme');
+      const initialDarkMode = savedTheme ? savedTheme === 'dark' : systemPrefersDark;
+      
+      setDarkMode(initialDarkMode);
+      document.documentElement.classList.toggle('dark', initialDarkMode);
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
+    // Save preference
+    localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
+    
+    // Toggle class on root element
+    document.documentElement.classList.toggle('dark', newDarkMode);
+  };
 
   return (
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
-      <div className={darkMode ? "dark" : ""}>
-        {children}
-      </div>
+      {children}
     </ThemeContext.Provider>
   );
 };
