@@ -1,8 +1,7 @@
-//app/components/calendarioAgendamento
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Calendar from 'react-calendar';
+import Calendar, { Value } from 'react-calendar'; // ⬅️ Importa o tipo Value corretamente
 import 'react-calendar/dist/Calendar.css';
 
 export default function CalendarioAgendamento() {
@@ -22,9 +21,9 @@ export default function CalendarioAgendamento() {
       });
   }, [dataSelecionada]);
 
-  const handleDataChange = (value: Date | Date[] | null, event?: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDataChange = (value: Value, event?: React.MouseEvent<HTMLButtonElement>) => {
     console.log('handleDataChange chamado com:', value, event);
-    if (!value) return; // Se for null, não faz nada
+    if (!value) return;
     if (Array.isArray(value)) {
       setDataSelecionada(value[0]);
     } else {
