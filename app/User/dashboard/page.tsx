@@ -28,12 +28,12 @@ export default function Dashboard() {
           type: "bar", // Tipo de gráfico (barras)
           data: {
             // Dados para o gráfico (rótulos e valores)
-            labels: ["PW 2", "BD 2", "PAM", "APS", "DS 1", "SE"], // Rótulos no eixo X
+            labels: ["I", "R", "B", "MB"], // Rótulos no eixo X
             datasets: [
               {
                 label: "Desempenho (%)", // Rótulo do conjunto de dados
                 data: [80, 70, 85, 60, 90, 30], // Valores para o gráfico
-                backgroundColor: ["#3b82f6", "#10b981", "#facc15", "#ef4444", "#8b5cf6", "#6b7280"], // Cores de fundo das barras
+                backgroundColor: ["#3b82f6", "#10b981", "#facc15", "#ef4444"], // Cores de fundo das barras
               },
             ],
           },
