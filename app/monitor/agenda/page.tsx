@@ -1,61 +1,161 @@
-"use client";
+'use client';
+
 import { useState, useEffect } from "react";
-import Navbar from '../../components/Navbar'; // Caminho correto para Navbar
-import Link from 'next/link'; // Importa o Link do Next.js
+import Navbar from '../../components/Navbar';
+import Link from 'next/link';
+
+type Meeting = {
+  id: number;
+  roomName: string;
+  date: string;
+  turma?: string;
+};
+
+type Mentoria = {
+  id_mentoria: number;
+  disciplina: string;
+};
 
 export default function Agenda() {
-  const userType: 'admin' | 'monitor' | 'student' = 'monitor'; // Defina corretamente o tipo de usuário
-  const [meetings, setMeetings] = useState<{ roomName: string; date: string; turma?: string }[]>([]);
+  const userType: 'admin' | 'monitor' | 'student' = 'monitor';
+
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [mentorias, setMentorias] = useState<Mentoria[]>([]);
+  const [idMentoria, setIdMentoria] = useState<string>("");
   const [meetingDate, setMeetingDate] = useState<string>("");
   const [turma, setTurma] = useState<string>("");
 
+  // Buscar mentorias disponíveis
   useEffect(() => {
-    const storedMeetings = localStorage.getItem("meetings");
-    if (storedMeetings) {
-      setMeetings(JSON.parse(storedMeetings));
-    }
+    const fetchMentorias = async () => {
+      try {
+        const res = await fetch("/api/mentorias");
+        const data = await res.json();
+        setMentorias(data);
+      } catch (error) {
+        console.error("Erro ao carregar mentorias:", error);
+      }
+    };
+    fetchMentorias();
   }, []);
 
-  const handleSchedule = () => {
-    if (!meetingDate.trim()) {
-      alert("Por favor, selecione uma data e hora.");
+  // Buscar agendamentos do dia atual
+  useEffect(() => {
+    const fetchAgendamentos = async () => {
+      const hoje = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
+
+      try {
+        const response = await fetch(`/api/agendamentos?data=${hoje}`);
+        const dados = await response.json();
+
+        const formatados: Meeting[] = dados.map((item: any) => ({
+          id: item.id_agendamento,
+          roomName: `meeting-${item.id_agendamento}`,
+          date: new Date(item.data_agendada).toLocaleString(),
+          turma: item.turma || "",
+        }));
+
+        setMeetings(formatados);
+      } catch (err) {
+        console.error("Erro ao buscar agendamentos:", err);
+      }
+    };
+
+    fetchAgendamentos();
+  }, []);
+
+  // Agendar nova monitoria
+  const handleSchedule = async () => {
+    if (!idMentoria || !meetingDate.trim()) {
+      alert("Selecione a mentoria e a data.");
       return;
     }
 
-    const newMeeting = {
-      roomName: `meeting-${Date.now()}`,
-      date: new Date(meetingDate).toLocaleString(),
-      turma: turma.trim() ? turma : undefined,
-    };
+    try {
+      const response = await fetch("/api/agendamentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_mentoria: parseInt(idMentoria),
+          data_agendada: meetingDate,
+          status: "PENDENTE",
+        }),
+      });
 
-    const updatedMeetings = [...meetings, newMeeting];
-    setMeetings(updatedMeetings);
-    localStorage.setItem("meetings", JSON.stringify(updatedMeetings));
+      const data = await response.json();
 
-    setMeetingDate("");
-    setTurma("");
+      if (!response.ok) throw new Error(data.mensagem || "Erro ao agendar");
+
+      alert("Reunião agendada com sucesso!");
+
+      const novaReuniao: Meeting = {
+        id: data.id,
+        roomName: `meeting-${data.id}`,
+        date: new Date(meetingDate).toLocaleString(),
+        turma: turma.trim() || undefined,
+      };
+
+      setMeetings([...meetings, novaReuniao]);
+      setMeetingDate("");
+      setIdMentoria("");
+      setTurma("");
+
+    } catch (err) {
+      console.error("Erro ao agendar:", err);
+      alert("Erro ao agendar reunião.");
+    }
   };
 
-  const handleDeleteMeeting = (roomName: string) => {
-    const updatedMeetings = meetings.filter(meeting => meeting.roomName !== roomName);
-    setMeetings(updatedMeetings);
-    localStorage.setItem("meetings", JSON.stringify(updatedMeetings));
+  // Excluir reunião
+  const handleDeleteMeeting = async (id: number) => {
+    try {
+      const response = await fetch(`/api/agendamentos/${id}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.mensagem || "Erro ao excluir");
+
+      alert("Reunião excluída com sucesso!");
+      setMeetings(meetings.filter((m) => m.id !== id));
+
+    } catch (err) {
+      console.error("Erro ao excluir:", err);
+      alert("Erro ao excluir reunião.");
+    }
   };
 
   return (
     <div className="flex">
-      <Navbar userType={userType} /> {/* Passando a prop userType corretamente */}
+      <Navbar userType={userType} />
       <div className="container mx-auto px-4 py-6 flex-1">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">📅 Agenda de Monitorias</h2>
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h3 className="text-lg font-semibold mb-4">📌 Agendar Nova Reunião</h3>
+
+          <select
+            value={idMentoria}
+            onChange={(e) => setIdMentoria(e.target.value)}
+            className="block w-full p-2 border rounded mb-4"
+            required
+          >
+            <option value="">Selecione uma mentoria</option>
+            {mentorias.map((m) => (
+              <option key={m.id_mentoria} value={m.id_mentoria}>
+                Mentoria #{m.id_mentoria} - {m.disciplina}
+              </option>
+            ))}
+          </select>
+
           <input
             type="datetime-local"
             value={meetingDate}
             onChange={(e) => setMeetingDate(e.target.value)}
             className="block w-full p-2 border rounded mb-4"
           />
+
           <input
             type="text"
             placeholder="Turma (opcional)"
@@ -63,6 +163,7 @@ export default function Agenda() {
             onChange={(e) => setTurma(e.target.value)}
             className="block w-full p-2 border rounded mb-4"
           />
+
           <button
             onClick={handleSchedule}
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full"
@@ -77,7 +178,7 @@ export default function Agenda() {
         ) : (
           <ul className="space-y-4">
             {meetings.map((meeting) => (
-              <li key={meeting.roomName} className="bg-white p-4 rounded shadow-md flex justify-between items-center">
+              <li key={meeting.id} className="bg-white p-4 rounded shadow-md flex justify-between items-center">
                 <div>
                   <p><strong>📆 Data:</strong> {meeting.date}</p>
                   {meeting.turma && <p><strong>🏫 Turma:</strong> {meeting.turma}</p>}
@@ -91,7 +192,7 @@ export default function Agenda() {
                   </Link>
                 </div>
                 <button
-                  onClick={() => handleDeleteMeeting(meeting.roomName)}
+                  onClick={() => handleDeleteMeeting(meeting.id)}
                   className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                 >
                   Excluir
@@ -104,3 +205,4 @@ export default function Agenda() {
     </div>
   );
 }
+
