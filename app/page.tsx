@@ -1,6 +1,6 @@
-// app/pages/LandingPage.tsx
+// app/page.tsx
 "use client";
-import { useState } from "react";
+ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { FaGithub } from "react-icons/fa";
@@ -42,7 +42,7 @@ const featureSections = [
   </div>
 );*/
 
-export default function LandingPage() {
+export default function Page() {
   // Estados para controlar a expansão das seções e menu móvel
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     usuarios: true, // Apenas o primeiro começa expandido
@@ -61,11 +61,10 @@ export default function LandingPage() {
   };
 
   const { darkMode } = useTheme();
-
   return (
     <div className={`min-h-screen bg-[var(--background)] text-[var(--foreground)]`}>
-      <div className="absolute top-4 right-4">
-        <ThemeToggleButton />
+      <div className="absolute top-4 right-4 z-50">
+        
       </div>
 
       {/* Barra de Navegação */}
@@ -78,34 +77,48 @@ export default function LandingPage() {
           <div className="hidden md:flex space-x-6 items-center">
             {/* Dropdown Tecnologias */}
             <div className="relative group">
-              <button className="hover:text-destaque transition focus:outline-none">
-                Tecnologias
+              <button 
+                className="flex items-center space-x-1 
+                bg-[var(--background)] text-[var(--foreground)]
+                hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)] 
+                transition-colors duration-200 
+                focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-opacity-50 
+                rounded-md px-3 py-2"
+              >
+                <span>Tecnologias</span>
                 <svg
-                  className="ml-1 h-4 w-4 inline-block"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+                  className="w-4 h-4 transition-transform group-hover:rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
-                    clipRule="evenodd"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute left-0 mt-2 w-40 bg-fundo shadow-lg rounded hidden group-hover:block">
-                <Link href="/tecnologia/nextjs" className="block px-4 py-2 hover:bg-gray-50">
-                  Next.js
-                </Link>
-                <Link href="/tecnologia/javascript" className="block px-4 py-2 hover:bg-gray-50">
-                  JavaScript
-                </Link>
-                <Link href="/tecnologia/mysql" className="block px-4 py-2 hover:bg-gray-50">
-                  MySQL
-                </Link>
+              <div className="absolute left-0 mt-2 w-48 bg-[var(--card)] rounded-md shadow-soft-lg border border-[var(--border)] opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200">
+                <div className="py-2">
+                  <Link href="/tecnologia/nextjs" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
+                    Next.js
+                  </Link>
+                  <Link href="/tecnologia/javascript" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
+                    JavaScript
+                  </Link>
+                  <Link href="/tecnologia/mysql" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
+                    MySQL
+                  </Link>
+                </div>
               </div>
             </div>
-
-            <Link href="#documentacao" className="hover:text-destaque transition">
+           <ThemeToggleButton />
+            <Link 
+              href="#documentacao" 
+              className="flex items-center space-x-1 
+                bg-[var(--background)] text-[var(--foreground)]
+                hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)] 
+                transition-colors duration-200 
+                focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-opacity-50 
+                rounded-md px-3 py-2"
+            >
               Documentação
             </Link>
           </div>
@@ -114,7 +127,8 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center space-x-4">
             <Link
               href="/login"
-              className="bg-botao text-textoBotao px-4 py-2 rounded-md hover:bg-destaque transition"
+              className="bg-botao text-textoBotao px-4 py-2 rounded-md transition hover:bg-destaque 
+             shadow-[0_0_10px_var(--primary)] hover:shadow-[0_0_15px_var(--accent)]"
             >
               Login
             </Link>
@@ -135,59 +149,90 @@ export default function LandingPage() {
 
         {/* Menu Mobile */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 py-4 bg-fundo border-t border-secundario">
-            <div className="flex flex-col space-y-4 px-6">
-              {/* Dropdown para Tecnologias na versão mobile */}
-              <div>
+          <div className="fixed inset-0 z-50 lg:hidden">
+            {/* Overlay de fundo */}
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm dark:bg-slate-900/80" onClick={() => setMobileMenuOpen(false)}></div>
+            
+            {/* Painel de navegação */}
+            <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-[var(--background)] px-6 py-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-[var(--foreground)]">Menu</h2>
                 <button
-                  onClick={() => setMobileTechDropdownOpen(!mobileTechDropdownOpen)}
-                  className="w-full text-left px-4 py-3 hover:text-destaque transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-md p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                 >
-                  Tecnologias
+                  <XMarkIcon className="h-6 w-6" />
                 </button>
-                {mobileTechDropdownOpen && (
-                  <div className="pl-4">
+              </div>
+
+              <nav className="space-y-6">
+                {/* Dropdown Tecnologias */}
+                <div>
+                  <button
+                    onClick={() => setMobileTechDropdownOpen(!mobileTechDropdownOpen)}
+                    className="flex items-center justify-between w-full py-2 text-[var(--foreground)] hover:text-[var(--primary)]"
+                  >
+                    <span>Tecnologias</span>
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        mobileTechDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  <div className={`mt-2 space-y-2 transition-all duration-200 ${
+                    mobileTechDropdownOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+                  }`}>
                     <Link
                       href="/tecnologia/nextjs"
-                      className="block px-4 py-2 hover:text-destaque transition"
+                      className="block pl-4 py-2 text-[var(--muted-foreground)] hover:text-[var(--primary)]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Next.js
                     </Link>
                     <Link
                       href="/tecnologia/javascript"
-                      className="block px-4 py-2 hover:text-destaque transition"
+                      className="block pl-4 py-2 text-[var(--muted-foreground)] hover:text-[var(--primary)]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       JavaScript
                     </Link>
                     <Link
                       href="/tecnologia/mysql"
-                      className="block px-4 py-2 hover:text-destaque transition"
+                      className="block pl-4 py-2 text-[var(--muted-foreground)] hover:text-[var(--primary)]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       MySQL
                     </Link>
                   </div>
-                )}
-              </div>
+                </div>
 
-              <Link
-                href="#documentacao"
-                className="hover:text-destaque transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Documentação
-              </Link>
-              <div className="pt-4 border-t border-secundario flex flex-col space-y-4">
                 <Link
-                  href="/login"
-                  className="bg-botao text-textoBotao px-4 py-2 rounded-md hover:bg-destaque transition text-center"
+                  href="#documentacao"
+                  className="block py-2 text-[var(--foreground)] hover:text-[var(--primary)]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Login
+                  Documentação
                 </Link>
-              </div>
+
+                <div className="pt-6 border-t border-[var(--border)]">
+                  <Link
+                    href="/login"
+                    className="flex items-center justify-center w-full px-4 py-3 rounded-lg bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary-dark)] transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Login
+                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </nav>
             </div>
           </div>
         )}
@@ -195,7 +240,7 @@ export default function LandingPage() {
 
       {/* Seção do Hero */}
       <section className="bg-[var(--background)] py-16 px-6">
-        <div className="container mx-auto">
+        <div className="container mx-auto rounded-2xl shadow-lg bg-[var(--card)] p-8">
           <div className="flex flex-col lg:flex-row items-center">
             {/* Textos do Hero - Lado Esquerdo */}
             <div className="lg:w-1/2 mb-10 lg:mb-0">
@@ -210,14 +255,14 @@ export default function LandingPage() {
 
             {/* Imagem do Hero - Lado Direito */}
             <div className="lg:w-1/2 lg:pl-10">
-              {/* Placeholder para imagem - substitua pelo URL correto */}
-              <div className="rounded-lg overflow-hidden shadow-xl">
-                {/* TODO: Substituir pelo componente de imagem/vídeo real */}
-                <div className="bg-[var(--card)] h-64 md:h-80 flex items-center justify-center">
-                  {/* Substituir por uma imagem real */}
-                  <Image src={"/tela-aluno.png"} width={600} height={400} alt="Aula ao vivo" className="object-cover"/>
-                  {/* Exemplo: <Image src="/hero-image.jpg" alt="Plataforma Monitoria Digital" width={600} height={400} /> */}
-                </div>
+              <div className="rounded-2xl overflow-hidden shadow-xl bg-[var(--card)] p-4">
+                <Image
+                  src={"/tela-aluno.png"}
+                  width={600}
+                  height={400}
+                  alt="Aula ao vivo"
+                  className="object-cover w-full h-auto"
+                />
               </div>
             </div>
           </div>
@@ -266,19 +311,22 @@ export default function LandingPage() {
       </section>
 
       {/* Seção de CTA */}
-      <section className="py-16 px-6 bg-[var(--primary)] text-[var(--primary-foreground)]">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-6">
+      <section className="w-full py-20 bg-blue-500">
+        <div className="max-w-full px-0 text-center">
+          <h2 className="text-4xl font-bold text-white mb-6 tracking-tight">
             Transforme seus estudos agora
           </h2>
-          <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
+          <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
             Conecte-se com seus alunos e monitores em potenciais e em tempo real, aumente seu desempenho acadêmico e acelere o seu aprendizado.
           </p>
           <Link
             href="/login"
-            className="bg-[var(--card)] text-[var(--primary)] px-8 py-4 rounded-md hover:opacity-90 transition inline-block text-lg font-medium"
+            className="inline-flex items-center px-8 py-4 rounded-lg bg-white text-blue-700 font-semibold shadow-soft-lg hover:bg-opacity-90 transform hover:scale-105 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50"
           >
             Conecte-se agora
+            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
           </Link>
         </div>
       </section>
