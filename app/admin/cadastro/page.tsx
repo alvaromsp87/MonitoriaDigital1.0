@@ -216,24 +216,6 @@ const carregarUsuarios = async () => {
     );
   }
 
-  if (erro) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <Navbar userType="admin" />
-        <div className="max-w-6xl mx-auto p-4">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            <strong>Erro ao carregar dados:</strong> {erro}
-            <button 
-              onClick={carregarUsuarios}
-              className="ml-4 text-blue-600 hover:text-blue-800"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
   <div className="min-h-screen bg-gray-50">
