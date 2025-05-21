@@ -79,19 +79,22 @@ export default function Login() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
-        darkMode ? "bg-gray-900" : "bg-blue-100"
-      }`}
+      className={`
+        min-h-screen flex items-center justify-center transition-colors duration-300
+        bg-blue-50 dark:bg-[var(--fundo)]
+      `}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className={`relative p-6 rounded-3xl shadow-2xl w-full max-w-md ${
-          darkMode
-            ? "bg-gray-800 text-white shadow-gray-900/50"
-            : "bg-white text-gray-900 shadow-gray-300/50"
-        }`}
+        className={`relative p-6 rounded-3xl w-full max-w-md
+          bg-[var(--card)]
+          text-[var(--foreground)]
+          border-2 border-black/10
+          shadow-[0_0_40px_10px_rgba(255,221,51,0.32)]
+          dark:shadow-[0_0_32px_6px_rgba(0,112,243,0.32)]
+        `}
       >
         <div className="absolute top-4 right-4">
           <ThemeToggleButton />
@@ -103,14 +106,14 @@ export default function Login() {
             alt="Logo Monitoria Digital"
             width={140}
             height={140}
-            className={darkMode ? "brightness-90" : "brightness-100"}
+            className="brightness-100 dark:brightness-90"
           />
         </div>
 
         {!showReset ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block font-medium">
+              <label htmlFor="email" className="block font-medium text-[var(--titulo)] dark:text-[var(--titulo-dark)]">
                 E-mail
               </label>
               <input
@@ -119,17 +122,15 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Digite seu e-mail"
-                className={`w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-300 focus:outline-none ${
-                  darkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-white border-gray-300 text-black placeholder-gray-500"
-                }`}
+                className={`w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-[#0070F3] focus:outline-none
+                  bg-[var(--card)] text-[var(--foreground)] border-[var(--border)] placeholder-[var(--paragrafo)]
+                `}
                 required
               />
             </div>
 
             <div className="relative">
-              <label htmlFor="password" className="block font-medium">
+              <label htmlFor="password" className="block font-medium text-[var(--titulo)] dark:text-[var(--titulo-dark)]">
                 Senha
               </label>
               <input
@@ -138,21 +139,18 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Digite sua senha"
-                className={`w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-300 focus:outline-none pr-10 ${
-                  darkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-white border-gray-300 text-black placeholder-gray-500"
-                }`}
+                className={`w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-[#0070F3] focus:outline-none pr-10
+                  bg-[var(--card)] text-[var(--foreground)] border-[var(--border)] placeholder-[var(--paragrafo)]
+                `}
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className={`absolute right-2 top-[38px] ${
-                  darkMode ? "text-gray-400" : "text-gray-500"
-                }`}
+                className="absolute right-3 top-[38px] text-[#0070F3] p-0 m-0 bg-transparent border-none focus:outline-none"
                 tabIndex={-1}
                 aria-label="Mostrar ou ocultar senha"
+                style={{margin:0,padding:0}}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -164,7 +162,7 @@ export default function Login() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-red-500 text-sm text-center"
+                  className="text-terciario text-sm text-center"
                 >
                   {error}
                 </motion.div>
@@ -173,7 +171,7 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-300 disabled:opacity-50"
+              className="w-full bg-destaque text-textoBotao py-2 rounded hover:bg-botao transition duration-300 disabled:opacity-50 shadow-[0_0_10px_2px_var(--destaque)]"
               disabled={!email || !password || loading}
             >
               {loading ? (
@@ -205,11 +203,12 @@ export default function Login() {
               )}
             </button>
 
-            <div className="text-center">
+            <div className="text-center mt-0">
               <button
                 type="button"
                 onClick={() => setShowReset(true)}
-                className="text-blue-600 hover:underline text-sm"
+                className="text-[#0070F3] hover:underline text-sm p-0 m-0 bg-transparent border-none focus:outline-none"
+                style={{margin:0,padding:0}}
               >
                 Esqueceu sua senha?
               </button>
@@ -218,7 +217,7 @@ export default function Login() {
         ) : (
           <div className="space-y-4">
             <div>
-              <label htmlFor="reset-email" className="block font-medium">
+              <label htmlFor="reset-email" className="block font-medium text-[var(--titulo)] dark:text-[var(--titulo-dark)]">
                 Digite seu e-mail para redefinir a senha
               </label>
               <input
@@ -227,7 +226,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="exemplo@dominio.com"
-                className="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-300 focus:outline-none text-black"
+                className="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-[var(--destaque)] focus:outline-none bg-[var(--card)] text-[var(--foreground)] border-[var(--border)] placeholder-[var(--paragrafo)]"
                 required
               />
             </div>
@@ -238,7 +237,7 @@ export default function Login() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-red-500 text-sm text-center"
+                  className="text-terciario text-sm text-center"
                 >
                   {error}
                 </motion.div>
@@ -264,7 +263,7 @@ export default function Login() {
               </button>
               <button
                 onClick={handleForgotPassword}
-                className="w-1/2 bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+                className="w-1/2 bg-destaque text-textoBotao py-2 rounded hover:bg-botao transition"
               >
                 Enviar
               </button>

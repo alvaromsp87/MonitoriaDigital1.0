@@ -429,6 +429,7 @@ const carregarUsuarios = async () => {
         </div>
       </div>
 
+
       {/* Users Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="overflow-x-auto">
@@ -497,10 +498,46 @@ const carregarUsuarios = async () => {
                   <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
                     Nenhum usuário cadastrado
                   </td>
+
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {usuarios.length > 0 ? (
+                  usuarios.map((usuario) => (
+                    <tr key={usuario.id_usuario} className="border-t hover:bg-gray-50">
+                      <td className="p-2">{usuario.nome}</td>
+                      <td className="p-2">{usuario.email}</td>
+                      <td className="p-2 capitalize">{usuario.tipo}</td>
+                      <td className="p-2">{usuario.curso || '-'}</td>
+                      <td className="p-2">{usuario.especialidade || '-'}</td>
+                      <td className="p-2">{usuario.formacao_academica || '-'}</td>
+                      <td className="p-2">{usuario.data_nascimento?.split('T')[0] || '-'}</td>
+                      <td className="p-2 space-x-2">
+                        <button
+                          onClick={() => handleEdit(usuario)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(usuario.id_usuario)}
+                          className="text-red-600 hover:underline"
+                        >
+                          Deletar
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="p-4 text-center text-gray-500">
+                      Nenhum usuário cadastrado
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

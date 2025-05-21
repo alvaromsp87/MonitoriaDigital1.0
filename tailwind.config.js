@@ -1,5 +1,5 @@
 module.exports = {
-  darkMode: 'class', // ative o modo escuro via classe
+  darkMode: 'class',
   content: [
     "./app/**/*.{js,ts,jsx,tsx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
@@ -8,17 +8,63 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Paleta de cores personalizada baseada na imagem fornecida
-        fundo: "#ffffff", // Cor de fundo principal
-        titulo: "#094067", // Cor dos títulos
-        paragrafo: "#5f6c7b", // Cor de parágrafos
-        botao: "#3da9fc", // Cor de fundo dos botões
-        textoBotao: "#ffffff", // Cor do texto dos botões
-        avc: "#094067", // Cor usada em ilustrações (AVC)
-        principal: "#ffffff", // Cor principal de destaque
-        destaque: "#3da9fc", // Cor de elementos em destaque
-        secundario: "#90b4ce", // Cor secundária
-        terciario: "#ef4565", // Cor terciária
+        // Cores do sistema (light mode)
+        fundo: {
+          light: "#ffffff",
+          dark: "#1a1b1e"
+        },
+        titulo: {
+          light: "#094067",
+          dark: "#ffffff"
+        },
+        paragrafo: {
+          light: "#5f6c7b",
+          dark: "#a6a7ab"
+        },
+        botao: {
+          light: "#3da9fc",
+          dark: "#4dabf7",
+          hover: {
+            light: "#2b96e8",
+            dark: "#339af0"
+          }
+        },
+        textoBotao: {
+          light: "#ffffff",
+          dark: "#1a1b1e"
+        },
+        destaque: {
+          light: "#3da9fc",
+          dark: "#4dabf7"
+        },
+        secundario: {
+          light: "#90b4ce",
+          dark: "#495057"
+        },
+        terciario: {
+          light: "#ef4565",
+          dark: "#ff6b6b"
+        },
+        card: {
+          light: "#ffffff",
+          dark: "#25262b",
+          hover: {
+            light: "#f8f9fa",
+            dark: "#2c2d32"
+          }
+        },
+        border: {
+          light: "#e9ecef",
+          dark: "#373A40"
+        }
+      },
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+      },
+      boxShadow: {
+        'soft': '0 2px 4px 0 rgba(0,0,0,0.05)',
+        'soft-lg': '0 4px 6px -1px rgba(0,0,0,0.05)',
       },
     },
   },

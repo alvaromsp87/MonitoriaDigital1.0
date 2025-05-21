@@ -83,8 +83,8 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
       <div className="fixed inset-x-0 top-0 z-50">
         <div className={`${getNavbarColor()} flex justify-between items-center p-4`}>
           <div className="flex-1">
-            <button onClick={toggleMenu} className="text-white">
-              <Menu className="w-6 h-6" />
+            <button onClick={toggleMenu} className="p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200">
+              <Menu className="w-6 h-6 text-white" />
             </button>
           </div>
           <div className="flex-1 text-center">
@@ -100,7 +100,7 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
         {isOpen && (
           <>
             <motion.div
-              className="fixed inset-0 bg-black bg-opacity-40 z-40"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -108,23 +108,43 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
             />
 
             <motion.div
-              className={`fixed top-0 left-0 w-64 h-full p-6 z-50 text-white ${getNavbarColor()}`}
+              className={`fixed top-0 left-0 w-64 h-full z-50 text-white ${getNavbarColor()} shadow-xl`}
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center px-6 py-4 border-b border-black/10 dark:border-white/10">
                 <h3 className="text-xl font-semibold">
-                  {userType === 'admin' ? 'ADM' : 
-                  userType === 'monitor' ? 'Monitor' : 'Aluno'}
+                  {userType === 'admin' ? 'ADM' : userType === 'monitor' ? 'Monitor' : 'Aluno'}
                 </h3>
-                <button onClick={toggleMenu}>
-                  <X className="w-6 h-6" />
+                <button
+                  onClick={toggleMenu}
+                  className="p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200"
+                  aria-label="Fechar menu"
+                >
+                  <X className="w-6 h-6 text-white" />
                 </button>
               </div>
-              <nav className="space-y-3">
-                {renderLinks()}
+              <nav className="flex flex-col w-full py-2">
+                {links[userType].map(({ href, label, extra }, index) => (
+                  <Link
+                    key={index}
+                    href={href}
+                    onClick={(e) => {
+                      if (label === 'Sair') {
+                        e.preventDefault();
+                        logout();
+                        router.push('/login');
+                      }
+                    }}
+                    className={`w-full px-6 py-3 text-white text-left transition-colors duration-200 hover:bg-black/10 dark:hover:bg-white/10 ${
+                      label === 'Sair' ? 'mt-4 text-red-300 hover:text-red-100 hover:bg-red-500/20' : ''
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                ))}
               </nav>
             </motion.div>
           </>

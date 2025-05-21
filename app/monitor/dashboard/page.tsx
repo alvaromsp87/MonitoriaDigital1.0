@@ -80,7 +80,7 @@ export default function Dashboard() {
             {/* Card do gráfico de desempenho */}
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h5 className="text-lg font-semibold mb-4">Desempenho dos Alunos</h5>
-              <div className="h-52">
+              <div style={{ position: 'relative', height: '300px', width: '100%' }}>
                 {/* Referência para o canvas onde o gráfico será desenhado */}
                 <canvas ref={chartRef}></canvas>
               </div>
