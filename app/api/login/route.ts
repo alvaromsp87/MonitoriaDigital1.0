@@ -1,44 +1,45 @@
-// app/api/login/route.ts
 import { NextResponse } from "next/server";
+import { pool } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
-  // Simule a verificação ou busque do banco de dados
-  if (email === "admin@exemplo.com" && password === "123456") {
-    const response = NextResponse.json({ role: "admin" });
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT u.id_usuario, u.senha, a.tipo
+      FROM usuarios u
+      INNER JOIN acessos a ON u.id_usuario = a.id_usuario
+      WHERE u.email = ?
+    `,
+      [email]
+    );
 
-    // Define o cookie `userType` acessível pelo middleware
-    response.cookies.set("userType", "admin", {
+    const usuarios = Array.isArray(rows) ? rows : [];
+
+    if (usuarios.length === 0) {
+      return new NextResponse("Credenciais inválidas", { status: 401 });
+    }
+
+    const usuario = usuarios[0] as any;
+
+    const senhaCorreta = await bcrypt.compare(password, usuario.senha);
+    if (!senhaCorreta) {
+      return new NextResponse("Credenciais inválidas", { status: 401 });
+    }
+
+    const response = NextResponse.json({ role: usuario.tipo });
+
+    response.cookies.set("userType", usuario.tipo, {
       path: "/",
       httpOnly: false,
       sameSite: "lax",
     });
 
     return response;
+  } catch (error) {
+    console.error("Erro ao processar login:", error);
+    return new NextResponse("Erro interno do servidor", { status: 500 });
   }
-
-  // Repetir lógica para monitor e user
-  if (email === "monitor@exemplo.com" && password === "123456") {
-    const response = NextResponse.json({ role: "monitor" });
-    response.cookies.set("userType", "monitor", {
-      path: "/",
-      httpOnly: false,
-      sameSite: "lax",
-    });
-    return response;
-  }
-
-  if (email === "user@exemplo.com" && password === "123456") {
-    const response = NextResponse.json({ role: "aluno" });
-    response.cookies.set("userType", "aluno", {
-      path: "/",
-      httpOnly: false,
-      sameSite: "lax",
-    });
-    return response;
-  
-  }
-
-  return new NextResponse("Credenciais inválidas", { status: 401 });
 }
