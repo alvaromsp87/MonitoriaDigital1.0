@@ -7,7 +7,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { id } = params;
   const { status } = await req.json();
 
-  if (!['PENDENTE', 'CONFIRMADO', 'CANCELADO'].includes(status)) {
+  if (!['REALIZADA','PENDENTE', 'CONFIRMADO', 'CANCELADO'].includes(status)) {
     return NextResponse.json({ mensagem: 'Status inválido' }, { status: 400 });
   }
 
