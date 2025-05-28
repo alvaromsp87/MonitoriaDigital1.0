@@ -1,503 +1,421 @@
-  'use client';
-  import { useEffect, useState } from 'react';
-  import Navbar from '../../components/Navbar';
-  import Papa from 'papaparse';
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import Navbar from '../../components/Navbar';
+import Papa from 'papaparse';
+import { 
+  PlusCircleIcon, 
+  PencilIcon, 
+  TrashIcon, 
+  ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
+  XCircleIcon 
+} from '@heroicons/react/24/outline';
 
-  type Usuario = {
-    id_usuario: number;
-    nome: string;
-    email: string;
-    tipo: string;
-    curso?: string;
-    especialidade?: string;
-    formacao_academica?: string;
-    data_nascimento?: string;
-  };
+type Usuario = {
+  id_usuario: number;
+  nome: string;
+  email: string;
+  tipo: string;
+  curso?: string;
+  especialidade?: string;
+  formacao_academica?: string;
+  data_nascimento?: string;
+};
 
-  function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) return error.message;
-    return String(error);
-  }
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
 
-  export default function CadastroPage() {
-    const [formData, setFormData] = useState({
-      nome: '',
-      email: '',
-      senha: '',
-      tipo: '',
-      curso: '',
-      especialidade: '',
-      formacao_academica: '',
-      data_nascimento: '',
-    });
+const initialFormData = {
+  nome: '',
+  email: '',
+  senha: '',
+  tipo: '',
+  curso: '',
+  especialidade: '',
+  formacao_academica: '',
+  data_nascimento: '',
+};
 
-    const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-    const [carregando, setCarregando] = useState(true);
-    const [erro, setErro] = useState<string | null>(null);
-    const [editandoId, setEditandoId] = useState<number | null>(null);
-    const [file, setFile] = useState<File | null>(null);
+export default function CadastroPage() {
+  const [formData, setFormData] = useState(initialFormData);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
-  const carregarUsuarios = async () => {
+  const carregarUsuarios = useCallback(async () => {
     try {
       setCarregando(true);
       setErro(null);
-      
       const res = await fetch('/api/usuarios', {
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
-
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || `Erro ${res.status}`);
       }
-
       const data = await res.json();
       setUsuarios(data);
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
-      setErro(error instanceof Error ? error.message : "Erro desconhecido");
+      setErro(error instanceof Error ? error.message : "Erro desconhecido ao carregar usuários.");
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    carregarUsuarios();
+  }, [carregarUsuarios]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCarregando(true); 
+    try {
+      const url = editandoId ? `/api/usuarios/${editandoId}` : '/api/usuarios';
+      const method = editandoId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao processar requisição');
+      }
+      alert(editandoId ? 'Usuário atualizado com sucesso!' : 'Usuário cadastrado com sucesso!');
+      setEditandoId(null);
+      setFormData(initialFormData);
+      await carregarUsuarios();
+    } catch (error) {
+      alert(getErrorMessage(error));
     } finally {
       setCarregando(false);
     }
   };
 
-    useEffect(() => {
-      carregarUsuarios();
-    }, []);
+  const handleDelete = async (id_usuario: number) => {
+    if (!window.confirm('Tem certeza que deseja excluir este usuário?')) return;
+    try {
+      setCarregando(true); 
+      const res = await fetch(`/api/usuarios/${id_usuario}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao deletar usuário');
+      }
+      alert('Usuário deletado com sucesso!');
+      await carregarUsuarios();
+    } catch (error) { 
+      alert(getErrorMessage(error)); 
+    } finally {
+      setCarregando(false);
+    }
+  };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+  const handleEdit = (usuario: Usuario) => {
+    setEditandoId(usuario.id_usuario);
+    setFormData({
+      nome: usuario.nome,
+      email: usuario.email,
+      senha: '', 
+      tipo: usuario.tipo,
+      curso: usuario.curso || '',
+      especialidade: usuario.especialidade || '',
+      formacao_academica: usuario.formacao_academica || '',
+      data_nascimento: usuario.data_nascimento 
+        ? new Date(usuario.data_nascimento).toISOString().split('T')[0] 
+        : '',
+    });
+    // Adiciona a rolagem para o topo da página
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setCarregando(true);
+const handleCSVImport = async () => {
+    if (!file) {
+      alert("Por favor, selecione um arquivo CSV.");
+      return;
+    }
+    setCarregando(true); 
+    // let totalUsuariosProcessados = 0; // Removida esta linha
+    let totalUsuariosCriadosComSucesso = 0;
+    const errosPorLote: { lote: number, detalhes: string }[] = []; // Para armazenar erros com mais detalhes
 
-      try {
-        const url = editandoId 
-          ? `/api/usuarios/${editandoId}`
-          : '/api/usuarios';
-
-        const method = editandoId ? 'PUT' : 'POST';
-
-        const res = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Erro ao processar requisição');
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (result: Papa.ParseResult<Record<string, string>>) => {
+        const usuariosDoCsv = result.data;
+        if (usuariosDoCsv.length === 0) {
+          alert("CSV vazio ou sem dados válidos para importar.");
+          setCarregando(false);
+          setFile(null);
+          return;
         }
 
-        alert(editandoId ? 'Usuário atualizado com sucesso!' : 'Usuário cadastrado com sucesso!');
-        setEditandoId(null);
-        setFormData({
-          nome: '',
-          email: '',
-          senha: '',
-          tipo: '',
-          curso: '',
-          especialidade: '',
-          formacao_academica: '',
-          data_nascimento: '',
-        });
-        await carregarUsuarios();
-      } catch (error) {
-        alert(getErrorMessage(error));
-      } finally {
-        setCarregando(false);
-      }
-    };
+        const batchSize = 50; 
+        
+        for (let i = 0; i < usuariosDoCsv.length; i += batchSize) {
+          const batch = usuariosDoCsv.slice(i, i + batchSize);
+          const loteNumero = Math.floor(i / batchSize) + 1;
+          // totalUsuariosProcessados += batch.length; // Removida esta linha
 
-    const handleDelete = async (id_usuario: number) => {
-      if (!window.confirm('Tem certeza que deseja excluir este usuário?')) return;
-
-      try {
-        const res = await fetch(`/api/usuarios/${id_usuario}`, {
-          method: 'DELETE',
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Erro ao deletar usuário');
-        }
-
-        alert('Usuário deletado com sucesso!');
-        await carregarUsuarios();
-      } catch (error) {
-        alert(getErrorMessage(error));
-      }
-    };
-
-    const handleEdit = (usuario: Usuario) => {
-      setEditandoId(usuario.id_usuario);
-      setFormData({
-        nome: usuario.nome,
-        email: usuario.email,
-        senha: '',
-        tipo: usuario.tipo,
-        curso: usuario.curso || '',
-        especialidade: usuario.especialidade || '',
-        formacao_academica: usuario.formacao_academica || '',
-        data_nascimento: usuario.data_nascimento 
-          ? new Date(usuario.data_nascimento).toISOString().split('T')[0]
-          : '',
-      });
-    };
-
-    const handleCSVImport = () => {
-      if (!file) return;
-
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: async (result: Papa.ParseResult<Record<string, string>>) => {
           try {
-            const res = await fetch('/api/usuarios/batch', {
+            const res = await fetch('/api/usuarios/batch', { 
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(result.data),
+              body: JSON.stringify(batch), 
             });
 
+            const responseData = await res.json();
+
             if (!res.ok) {
-              throw new Error(await res.text());
+              const erroMsg = responseData.error || `Erro no lote ${loteNumero}: ${res.statusText}`;
+              console.error(erroMsg, responseData.errors);
+              errosPorLote.push({ lote: loteNumero, detalhes: erroMsg + (responseData.errors ? ` Detalhes: ${JSON.stringify(responseData.errors)}` : '') });
             }
-            
-            alert('Importação concluída com sucesso!');
-            await carregarUsuarios();
-          } catch (error) {
-            alert(`Erro na importação: ${getErrorMessage(error)}`);
+            if (responseData.createdCount) {
+                totalUsuariosCriadosComSucesso += responseData.createdCount;
+            }
+
+          } catch (batchError: unknown) {
+            const erroMsg = `Erro crítico ao enviar lote ${loteNumero}: ${getErrorMessage(batchError)}`;
+            console.error(erroMsg);
+            errosPorLote.push({ lote: loteNumero, detalhes: erroMsg });
           }
-        },
-        error: (error: Error) => {
-          alert(`Erro ao processar CSV: ${error.message}`);
-        },
-      });
-    };
+        }
 
-    const handleCSVExport = () => {
-      if (!Array.isArray(usuarios)) {
-        alert('Dados inválidos para exportação');
-        return;
-      }
+        setCarregando(false);
+        setFile(null); 
 
-      try {
-        const csv = Papa.unparse(usuarios);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+        let alertMessage = `Processamento do CSV concluído.\nTotal de registros no CSV: ${usuariosDoCsv.length}.\n`;
+        alertMessage += `Usuários criados com sucesso: ${totalUsuariosCriadosComSucesso}.\n`;
+        
+        if (errosPorLote.length > 0) {
+          alertMessage += `Ocorreram erros em ${errosPorLote.length} lote(s) ou com usuários individuais.\nConsulte o console do navegador para mais detalhes sobre os erros.`;
+        } else if (totalUsuariosCriadosComSucesso === usuariosDoCsv.length) {
+            alertMessage = `Todos os ${totalUsuariosCriadosComSucesso} usuários do CSV foram importados com sucesso!`;
+        } else if (totalUsuariosCriadosComSucesso > 0 && totalUsuariosCriadosComSucesso < usuariosDoCsv.length){
+            alertMessage += `Alguns usuários podem não ter sido importados devido a erros. Verifique o console.`;
+        } else if (totalUsuariosCriadosComSucesso === 0 && usuariosDoCsv.length > 0 && errosPorLote.length > 0) {
+             alertMessage = "Nenhum usuário foi importado devido a erros. Verifique o formato do CSV e os logs do console/servidor.";
+        } else if (totalUsuariosCriadosComSucesso === 0 && usuariosDoCsv.length > 0 && errosPorLote.length === 0) {
+             alertMessage = "Nenhum usuário foi importado. O CSV pode não conter dados válidos ou houve um problema inesperado.";
+        }
 
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `usuarios_${new Date().toISOString().slice(0, 10)}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        alert(`Erro ao exportar: ${getErrorMessage(error)}`);
-      }
-    };
 
-    if (carregando && usuarios.length === 0) {
-      return (
-        <div className="min-h-screen bg-gray-100">
-          <Navbar userType="admin" />
-          <div className="max-w-6xl mx-auto p-4">
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Carregando usuários...</p>
-            </div>
-          </div>
-        </div>
-      );
+        alert(alertMessage);
+        await carregarUsuarios(); 
+      },
+      error: (csvError: Error) => {
+        alert(`Erro ao processar o arquivo CSV: ${csvError.message}`);
+        setCarregando(false);
+      },
+    });
+  };
+
+  const handleCSVExport = () => {
+    if (!Array.isArray(usuarios) || usuarios.length === 0) { 
+      alert('Nenhum dado para exportar ou dados inválidos.');
+      return;
     }
-
-    if (erro) {
-      return (
-        <div className="min-h-screen bg-gray-100">
-          <Navbar userType="admin" />
-          <div className="max-w-6xl mx-auto p-4">
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-              <strong>Erro ao carregar dados:</strong> {erro}
-              <button 
-                onClick={carregarUsuarios}
-                className="ml-4 text-blue-600 hover:text-blue-800"
-              >
-                Tentar novamente
-              </button>
-            </div>
-          </div>
-        </div>
-      );
+    try {
+      const csv = Papa.unparse(usuarios);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `usuarios_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(`Erro ao exportar: ${getErrorMessage(error)}`);
     }
+  };
 
+  if (carregando && usuarios.length === 0 && !erro) {
     return (
-    <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <Navbar userType="admin" />
+        <div className="flex justify-center items-center h-[calc(100vh-4rem)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <p className="ml-4 text-gray-600 dark:text-gray-300">Carregando usuários...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (erro && usuarios.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <Navbar userType="admin" />
+        <div className="max-w-6xl mx-auto p-4 pt-20">
+          <div className="bg-red-100 dark:bg-red-800 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Erro ao carregar dados:</strong> {erro}
+            <button 
+              onClick={carregarUsuarios}
+              className="ml-4 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-semibold"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <Navbar userType="admin" />
+      <div className="max-w-7xl mx-auto p-6 pt-20 sm:pt-24"> 
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 mb-8">
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-8 text-center">
+            {editandoId ? 'Editar Usuário' : 'Cadastro de Usuários'}
+          </h2>
 
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Cadastro de Usuários</h2>
-
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Form Input Fields */}
-            <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+            {/* Coluna 1 do Formulário */}
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome*</label>
-                <input
-                  name="nome"
-                  placeholder="Nome completo"
-                  value={formData.nome}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                  required
-                />
+                <label htmlFor="nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome Completo*</label>
+                <input id="nome" name="nome" placeholder="Nome completo do usuário" value={formData.nome} onChange={handleChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Email válido"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                  required
-                />
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email*</label>
+                <input id="email" name="email" type="email" placeholder="exemplo@dominio.com" value={formData.email} onChange={handleChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {editandoId ? 'Nova Senha' : 'Senha*'}
-                </label>
-                <input
-                  type="password"
-                  name="senha"
-                  placeholder={editandoId ? 'Deixe em branco para manter' : 'Mínimo 6 caracteres'}
-                  value={formData.senha}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                  required={!editandoId}
-                  minLength={6}
-                />
+                <label htmlFor="senha" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{editandoId ? 'Nova Senha (opcional)' : 'Senha*'}</label>
+                <input id="senha" type="password" name="senha" placeholder={editandoId ? 'Deixe em branco para manter atual' : 'Mínimo 6 caracteres'} value={formData.senha} onChange={handleChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required={!editandoId} minLength={editandoId ? undefined : 6} />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo*</label>
-                <select
-                  name="tipo"
-                  value={formData.tipo}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                  required
-                >
+                <label htmlFor="tipo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Usuário*</label>
+                <select id="tipo" name="tipo" value={formData.tipo} onChange={handleChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                   <option value="">Selecione o Tipo</option>
                   <option value="admin">Administrador</option>
                   <option value="monitor">Monitor</option>
-                  <option value="aluno">aluno</option>
+                  <option value="aluno">Aluno</option>
                 </select>
               </div>
             </div>
-
-            <div className="space-y-4">
+            {/* Coluna 2 do Formulário */}
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
-                <input
-                  name="curso"
-                  placeholder="Curso do usuário"
-                  value={formData.curso}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                />
+                <label htmlFor="curso" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Curso</label>
+                <input id="curso" name="curso" placeholder="Curso (ex: Desenvolvimento de Sistemas)" value={formData.curso} onChange={handleChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Especialidade</label>
-                <input
-                  name="especialidade"
-                  placeholder="Área de especialização"
-                  value={formData.especialidade}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                />
+                <label htmlFor="especialidade" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Especialidade (para Monitores)</label>
+                <input id="especialidade" name="especialidade" placeholder="Área de especialização do monitor" value={formData.especialidade} onChange={handleChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Formação Acadêmica</label>
-                <input
-                  name="formacao_academica"
-                  placeholder="Nível de formação"
-                  value={formData.formacao_academica}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                />
+                <label htmlFor="formacao_academica" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Formação Acadêmica</label>
+                <input id="formacao_academica" name="formacao_academica" placeholder="Nível de formação (ex: Técnico, Graduação)" value={formData.formacao_academica} onChange={handleChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
-                <input
-                  type="date"
-                  name="data_nascimento"
-                  value={formData.data_nascimento}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                />
+                <label htmlFor="data_nascimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de Nascimento</label>
+                <input id="data_nascimento" type="date" name="data_nascimento" value={formData.data_nascimento} onChange={handleChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
               </div>
             </div>
-
-            {/* Form Actions */}
-            <div className="col-span-full flex flex-col sm:flex-row gap-4 pt-4">
-              <button
-                type="submit"
-                disabled={carregando}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg shadow-sm transition flex items-center justify-center gap-2 flex-1"
-              >
-                {carregando ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processando...
-                  </>
-                ) : editandoId ? (
-                  'Atualizar Usuário'
-                ) : (
-                  'Cadastrar Usuário'
-                )}
+            <div className="md:col-span-2 flex flex-col sm:flex-row gap-4 pt-6">
+              <button type="submit" disabled={carregando} className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-70">
+                {carregando && !editandoId ? ( <><svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processando...</>
+                ) : editandoId ? <><PencilIcon className="h-5 w-5 mr-1" />Atualizar Usuário</> : <><PlusCircleIcon className="h-5 w-5 mr-1" />Cadastrar Usuário</>}
               </button>
-
               {editandoId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditandoId(null);
-                    setFormData({
-                      nome: '',
-                      email: '',
-                      senha: '',
-                      tipo: '',
-                      curso: '',
-                      especialidade: '',
-                      formacao_academica: '',
-                      data_nascimento: '',
-                    });
-                  }}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg shadow-sm transition flex-1"
-                >
-                  Cancelar
+                <button type="button" onClick={() => { setEditandoId(null); setFormData(initialFormData);}} className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-100 font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                  <XCircleIcon className="h-5 w-5 mr-1" />Cancelar Edição
                 </button>
               )}
             </div>
           </form>
         </div>
 
-        {/* CSV Import/Export Section */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Importar/Exportar Dados</h3>
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="flex-1 w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Arquivo CSV</label>
-              <div className="flex gap-2">
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition"
-                />
-                <button
-                  onClick={handleCSVImport}
-                  disabled={!file}
-                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
-                >
-                  Importar CSV
-                </button>
-              </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 mb-8">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Importar/Exportar Dados CSV</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <div>
+              <label htmlFor="csvFile" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selecionar Arquivo CSV para Importar</label>
+              <input id="csvFile" type="file" accept=".csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border file:border-gray-300 dark:file:border-gray-600 file:text-sm file:font-semibold file:bg-gray-100 dark:file:bg-gray-700 file:text-gray-700 dark:file:text-gray-200 hover:file:bg-gray-200 dark:hover:file:bg-gray-600 transition" />
             </div>
-            <button
-              onClick={handleCSVExport}
-              disabled={usuarios.length === 0}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap w-full md:w-auto"
-            >
-              Exportar CSV
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4">
+                <button onClick={handleCSVImport} disabled={!file || carregando} className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition disabled:opacity-70 flex items-center justify-center gap-2">
+                  <ArrowUpTrayIcon className="h-5 w-5 mr-1" />Importar
+                </button>
+                <button onClick={handleCSVExport} disabled={usuarios.length === 0 || carregando} className="flex-1 bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-400 dark:hover:bg-yellow-500 text-white dark:text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition disabled:opacity-70 flex items-center justify-center gap-2">
+                  <ArrowDownTrayIcon className="h-5 w-5 mr-1" />Exportar
+                </button>
+            </div>
           </div>
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white p-6 sm:p-8">Usuários Cadastrados</h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nome
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
+                  {['Nome', 'Email', 'Tipo', 'Ações'].map(header => (
+                    <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {usuarios.length > 0 ? (
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {erro && usuarios.length === 0 ? ( 
+                    <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-sm text-red-500 dark:text-red-400">
+                            Erro ao carregar usuários: {erro}
+                        </td>
+                    </tr>
+                ) : !carregando && usuarios.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                      Nenhum usuário cadastrado.
+                    </td>
+                  </tr>
+                ) : (
                   usuarios.map((usuario) => (
-                    <tr key={usuario.id_usuario} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {usuario.nome}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {usuario.email}
-                      </td>
+                    <tr key={usuario.id_usuario} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{usuario.nome}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{usuario.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          usuario.tipo === 'admin' ? 'bg-blue-100 text-blue-800' :
-                          usuario.tipo === 'monitor' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${usuario.tipo === 'admin' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                            usuario.tipo === 'monitor' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                            'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-100'}`}>
                           {usuario.tipo}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEdit(usuario)}
-                            className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition flex items-center gap-1"
+                        <div className="flex items-center space-x-3">
+                          {/* Botão Editar Atualizado */}
+                          <button 
+                            onClick={() => handleEdit(usuario)} 
+                            className="bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white font-semibold py-1 px-3 rounded-md shadow-sm transition flex items-center gap-1"
                           >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Editar
+                            <PencilIcon className="h-4 w-4" />Editar
                           </button>
-                          <button
-                            onClick={() => handleDelete(usuario.id_usuario)}
-                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition flex items-center gap-1"
+                          {/* Botão Excluir Atualizado */}
+                          <button 
+                            onClick={() => handleDelete(usuario.id_usuario)} 
+                            className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-semibold py-1 px-3 rounded-md shadow-sm transition flex items-center gap-1"
                           >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Excluir
+                            <TrashIcon className="h-4 w-4" />Excluir
                           </button>
                         </div>
                       </td>
                     </tr>
                   ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                      Nenhum usuário cadastrado
-                    </td>
-                  </tr>
                 )}
               </tbody>
             </table>
@@ -505,4 +423,5 @@
         </div>
       </div>
     </div>
-  );}
+  );
+}

@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@monitoriadigital/app/context/AuthContext";
-import io from "socket.io-client";
 import { MessageCircle } from "lucide-react";
 
-const socket = io("http://localhost:3001");
 
 export default function FloatingChat() {
   const { user } = useAuth();
@@ -18,17 +16,16 @@ export default function FloatingChat() {
       setMessages((prev) => [...prev, msg]);
     };
   
-    socket.on("message", handleMessage);
+    
   
     return () => {
-      socket.off("message", handleMessage);
+      
     };
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && user) {
-      socket.emit("message", `${user.email}: ${message}`);
       setMessage("");
     }
   };

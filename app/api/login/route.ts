@@ -1,45 +1,53 @@
+// app/api/login/route.ts
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db";
-import bcrypt from "bcryptjs";
+import { cookies } from "next/headers"; // Importar para definir cookies no servidor
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
-  try {
-    const [rows] = await pool.query(
-      `
-      SELECT u.id_usuario, u.senha, a.tipo
-      FROM usuarios u
-      INNER JOIN acessos a ON u.id_usuario = a.id_usuario
-      WHERE u.email = ?
-    `,
-      [email]
-    );
+  // Simulação de usuários e IDs. Substitua pela lógica do seu banco de dados.
+  const mockAdmin = { id: 1, nome: "Admin Principal", email: "admin@exemplo.com", tipo: "admin", senhaPlana: "123456" };
+  const mockMonitor = { id: 2, nome: "Monitor Alfa", email: "monitor@exemplo.com", tipo: "monitor", senhaPlana: "123456" };
+  const mockAluno = { id: 3, nome: "Aluno Beta", email: "user@exemplo.com", tipo: "aluno", senhaPlana: "123456" }; // user no email, mas tipo aluno
 
-    const usuarios = Array.isArray(rows) ? rows : [];
+  let userToAuthenticate = null;
 
-    if (usuarios.length === 0) {
-      return new NextResponse("Credenciais inválidas", { status: 401 });
-    }
+  if (email === mockAdmin.email && password === mockAdmin.senhaPlana) {
+    userToAuthenticate = mockAdmin;
+  } else if (email === mockMonitor.email && password === mockMonitor.senhaPlana) {
+    userToAuthenticate = mockMonitor;
+  } else if (email === mockAluno.email && password === mockAluno.senhaPlana) {
+    userToAuthenticate = mockAluno;
+  }
 
-    const usuario = usuarios[0] as any;
+  if (userToAuthenticate) {
+    const responsePayload = {
+      success: true,
+      message: "Login bem-sucedido!",
+      userId: userToAuthenticate.id,
+      role: userToAuthenticate.tipo, // O AuthContext espera 'role'
+      userName: userToAuthenticate.nome,
+    };
+    
+    const response = NextResponse.json(responsePayload);
 
-    const senhaCorreta = await bcrypt.compare(password, usuario.senha);
-    if (!senhaCorreta) {
-      return new NextResponse("Credenciais inválidas", { status: 401 });
-    }
-
-    const response = NextResponse.json({ role: usuario.tipo });
-
-    response.cookies.set("userType", usuario.tipo, {
+    // Definir cookies no servidor
+    // O AuthContext também define cookies no cliente com base na resposta JSON.
+    // Os cookies httpOnly do servidor são para segurança e uso em API routes.
+    const cookieOptions = {
       path: "/",
-      httpOnly: false,
-      sameSite: "lax",
-    });
+      httpOnly: true, // Mais seguro, não acessível via JavaScript do lado do cliente
+      secure: process.env.NODE_ENV === "production", // Usar 'secure' em produção (HTTPS)
+      sameSite: "lax" as const, // 'lax' ou 'strict'
+      maxAge: 60 * 60 * 24 * 7, // 7 dias
+    };
+
+    response.cookies.set("userId", String(userToAuthenticate.id), cookieOptions);
+    response.cookies.set("userType", userToAuthenticate.tipo, cookieOptions);
+    response.cookies.set("userName", userToAuthenticate.nome, cookieOptions); // Opcional, mas útil se o middleware/API precisar
 
     return response;
-  } catch (error) {
-    console.error("Erro ao processar login:", error);
-    return new NextResponse("Erro interno do servidor", { status: 500 });
   }
+
+  return NextResponse.json({ error: "Credenciais inválidas", success: false }, { status: 401 });
 }
