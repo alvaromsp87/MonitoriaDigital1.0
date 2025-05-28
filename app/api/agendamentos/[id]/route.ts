@@ -1,16 +1,21 @@
 // app/api/agendamentos/[id]/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+// PATCH: Atualizar status de agendamento
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
+  const { status } = await req.json();
+
+  if (!['PENDENTE', 'CONFIRMADO', 'CANCELADO'].includes(status)) {
+    return NextResponse.json({ mensagem: 'Status inválido' }, { status: 400 });
+  }
 
   try {
-    const [result] = await pool.query('DELETE FROM agendamentos WHERE id_agendamento = ?', [id]);
-
-    return NextResponse.json({ mensagem: "Agendamento excluído com sucesso!" });
-  } catch (err) {
-    console.error("Erro ao excluir agendamento:", err);
-    return NextResponse.json({ mensagem: "Erro ao excluir agendamento" }, { status: 500 });
+    await pool.query('UPDATE agendamentos SET status = ? WHERE id_agendamento = ?', [status, id]);
+    return NextResponse.json({ mensagem: 'Status atualizado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao atualizar status:', error);
+    return NextResponse.json({ mensagem: 'Erro ao atualizar status' }, { status: 500 });
   }
 }

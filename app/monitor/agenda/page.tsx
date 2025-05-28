@@ -9,11 +9,19 @@ type Meeting = {
   roomName: string;
   date: string;
   turma?: string;
+  status: string;
 };
 
 type Mentoria = {
   id_mentoria: number;
   disciplina: string;
+};
+
+type AgendamentoAPI = {
+  id_agendamento: number;
+  data_agendada: string;
+  turma?: string;
+  status: string;
 };
 
 export default function Agenda() {
@@ -25,7 +33,6 @@ export default function Agenda() {
   const [meetingDate, setMeetingDate] = useState<string>("");
   const [turma, setTurma] = useState<string>("");
 
-  // Buscar mentorias disponíveis
   useEffect(() => {
     const fetchMentorias = async () => {
       try {
@@ -39,20 +46,20 @@ export default function Agenda() {
     fetchMentorias();
   }, []);
 
-  // Buscar agendamentos do dia atual
   useEffect(() => {
     const fetchAgendamentos = async () => {
-      const hoje = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
+      const hoje = new Date().toISOString().split('T')[0];
 
       try {
         const response = await fetch(`/api/agendamentos?data=${hoje}`);
-        const dados = await response.json();
+        const dados: AgendamentoAPI[] = await response.json();
 
-        const formatados: Meeting[] = dados.map((item: any) => ({
+        const formatados: Meeting[] = dados.map((item) => ({
           id: item.id_agendamento,
           roomName: `meeting-${item.id_agendamento}`,
           date: new Date(item.data_agendada).toLocaleString(),
           turma: item.turma || "",
+          status: item.status,
         }));
 
         setMeetings(formatados);
@@ -64,7 +71,6 @@ export default function Agenda() {
     fetchAgendamentos();
   }, []);
 
-  // Agendar nova monitoria
   const handleSchedule = async () => {
     if (!idMentoria || !meetingDate.trim()) {
       alert("Selecione a mentoria e a data.");
@@ -93,6 +99,7 @@ export default function Agenda() {
         roomName: `meeting-${data.id}`,
         date: new Date(meetingDate).toLocaleString(),
         turma: turma.trim() || undefined,
+        status: "PENDENTE",
       };
 
       setMeetings([...meetings, novaReuniao]);
@@ -106,23 +113,25 @@ export default function Agenda() {
     }
   };
 
-  // Excluir reunião
-  const handleDeleteMeeting = async (id: number) => {
+  const handleStatusChange = async (id: number, newStatus: string) => {
     try {
       const response = await fetch(`/api/agendamentos/${id}`, {
-        method: "DELETE",
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
       });
 
       const result = await response.json();
 
-      if (!response.ok) throw new Error(result.mensagem || "Erro ao excluir");
+      if (!response.ok) throw new Error(result.mensagem || "Erro ao atualizar status");
 
-      alert("Reunião excluída com sucesso!");
-      setMeetings(meetings.filter((m) => m.id !== id));
+      setMeetings((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, status: newStatus } : m))
+      );
 
     } catch (err) {
-      console.error("Erro ao excluir:", err);
-      alert("Erro ao excluir reunião.");
+      console.error("Erro ao atualizar status:", err);
+      alert("Erro ao atualizar status da reunião.");
     }
   };
 
@@ -141,7 +150,9 @@ export default function Agenda() {
             className="block w-full p-2 border rounded mb-4"
             required
           >
-            <option value="">Selecione uma mentoria</option>
+            <option value="">
+              {mentorias.length === 0 ? "Nenhuma mentoria disponível" : "Selecione uma mentoria"}
+            </option>
             {mentorias.map((m) => (
               <option key={m.id_mentoria} value={m.id_mentoria}>
                 Mentoria #{m.id_mentoria} - {m.disciplina}
@@ -178,25 +189,35 @@ export default function Agenda() {
         ) : (
           <ul className="space-y-4">
             {meetings.map((meeting) => (
-              <li key={meeting.id} className="bg-white p-4 rounded shadow-md flex justify-between items-center">
+              <li
+                key={meeting.id}
+                className="bg-white p-4 rounded shadow-md flex justify-between items-center"
+              >
                 <div>
                   <p><strong>📆 Data:</strong> {meeting.date}</p>
                   {meeting.turma && <p><strong>🏫 Turma:</strong> {meeting.turma}</p>}
                   <p><strong>🔗 Sala:</strong> {meeting.roomName}</p>
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    <select
+                      value={meeting.status}
+                      onChange={(e) => handleStatusChange(meeting.id, e.target.value)}
+                      className="mt-1 border p-1 rounded"
+                    >
+                      <option value="PENDENTE">PENDENTE</option>
+                      <option value="CONFIRMADO">CONFIRMADO</option>
+                      <option value="CANCELADO">CANCELADO</option>
+                    </select>
+                  </p>
                   <Link
-                    href={`./Monitoria?room=${meeting.roomName}`}
+                    href={`/monitor/monitoria?room=${meeting.roomName}`}
                     target="_blank"
-                    className="text-blue-500 underline"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 underline block mt-2"
                   >
                     👉 Entrar na reunião
                   </Link>
                 </div>
-                <button
-                  onClick={() => handleDeleteMeeting(meeting.id)}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                >
-                  Excluir
-                </button>
               </li>
             ))}
           </ul>
@@ -205,4 +226,3 @@ export default function Agenda() {
     </div>
   );
 }
-

@@ -1,75 +1,157 @@
-"use client"; // Indica que este é um componente cliente (React)
-import Navbar from '../../components/Navbar'; // Caminho correto para Navbar
-import { useEffect, useRef } from "react"; // Importa hooks necessários do React
-import Chart from "chart.js/auto"; // Importa o Chart.js para criação de gráficos
-import CalendarioAgendamento from '@/app/components/calendarioAgendamento';
+"use client";
+import Navbar from '../../components/Navbar';
+import { useEffect, useRef, useState } from "react";
+import Chart from "chart.js/auto";
+
+interface Meeting {
+  id: number;
+  date: string;
+  disciplina: string;
+}
+
+interface AgendamentoAPI {
+  id_agendamento: number;
+  data_agendada: string;
+  disciplina?: string;
+}
+
+interface StatusResumo {
+  status: string;
+  quantidade: number;
+}
 
 export default function Dashboard() {
-  const userType: 'admin' | 'monitor' | 'student' = 'admin'; // Defina corretamente o tipo de usuário
-  // Ref para o elemento canvas onde o gráfico será desenhado
+  const userType: 'admin' | 'monitor' | 'student' = 'admin';
   const chartRef = useRef<HTMLCanvasElement | null>(null);
-  
-  // Ref para armazenar a instância do gráfico, para poder manipulá-lo depois (como destruir ou atualizar)
-  const chartInstanceRef = useRef<Chart | null>(null); 
+  const statusChartRef = useRef<HTMLCanvasElement | null>(null);
+  const chartInstanceRef = useRef<Chart | null>(null);
+  const statusChartInstanceRef = useRef<Chart | null>(null);
 
-  // useEffect é usado para criar o gráfico quando o componente for montado
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [statusResumo, setStatusResumo] = useState<StatusResumo[]>([]);
+
   useEffect(() => {
-    // Verifica se já existe uma instância do gráfico e a destrói antes de criar uma nova
+    const fetchAgendamentos = async () => {
+      try {
+        const response = await fetch(`/api/agendamentos?resumo=true`);
+        const dados = await response.json();
+
+        const formatados: Meeting[] = dados.map((item: AgendamentoAPI) => ({
+  id: item.id_agendamento,
+  date: new Date(item.data_agendada).toLocaleString(),
+  disciplina: item.disciplina || "Desconhecida",
+}));
+
+
+        setMeetings(formatados);
+      } catch (err) {
+        console.error("Erro ao buscar agendamentos:", err);
+      }
+    };
+
+    fetchAgendamentos();
+  }, []);
+
+  useEffect(() => {
+    const fetchStatusResumo = async () => {
+      try {
+        const response = await fetch('/api/agendamentos?resumo=status');
+        const data = await response.json();
+        setStatusResumo(data);
+      } catch (error) {
+        console.error('Erro ao buscar resumo por status:', error);
+      }
+    };
+
+    fetchStatusResumo();
+  }, []);
+
+  useEffect(() => {
     if (chartInstanceRef.current) {
       chartInstanceRef.current.destroy();
     }
 
-    // Verifica se o canvas foi referenciado corretamente
     if (chartRef.current) {
-      const ctx = chartRef.current.getContext("2d"); // Obtém o contexto 2D para desenhar no canvas
-
-      // Se o contexto for válido, cria a nova instância do gráfico
+      const ctx = chartRef.current.getContext("2d");
       if (ctx) {
         chartInstanceRef.current = new Chart(ctx, {
-          type: "bar", // Tipo de gráfico (barras)
+          type: "bar",
           data: {
-            // Dados para o gráfico (rótulos e valores)
-            labels: ["PW 2", "BD 2", "PAM", "APS", "DS 1", "SE"], // Rótulos no eixo X
+            labels: ["PW 2", "BD 2", "PAM", "APS", "DS 1", "SE"],
             datasets: [
               {
-                label: "Desempenho (%)", // Rótulo do conjunto de dados
-                data: [80, 70, 85, 60, 90, 30], // Valores para o gráfico
-                backgroundColor: ["#3b82f6", "#10b981", "#facc15", "#ef4444", "#8b5cf6", "#6b7280"], // Cores de fundo das barras
+                label: "Desempenho (%)",
+                data: [80, 70, 85, 60, 90, 30],
+                backgroundColor: ["#3b82f6", "#10b981", "#facc15", "#ef4444", "#8b5cf6", "#6b7280"],
               },
             ],
           },
           options: {
-            responsive: true, // O gráfico será responsivo (ajustará seu tamanho conforme a tela)
-            maintainAspectRatio: false, // Desativa a manutenção da proporção ao redimensionar
+            responsive: true,
+            maintainAspectRatio: false,
             scales: {
-              y: { beginAtZero: true }, // A escala do eixo Y começa do zero
+              y: { beginAtZero: true },
             },
           },
         });
       }
     }
 
-    // Cleanup (limpeza): ao desmontar o componente, destrói a instância do gráfico para evitar vazamentos de memória
     return () => {
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();
       }
     };
-  }, []); // O array vazio garante que o gráfico seja criado apenas uma vez, quando o componente for montado
+  }, []);
+
+  useEffect(() => {
+    if (!statusResumo.length || !statusChartRef.current) return;
+
+    const ctx = statusChartRef.current.getContext("2d");
+    if (!ctx) return;
+
+    if (statusChartInstanceRef.current) {
+      statusChartInstanceRef.current.destroy();
+    }
+
+    statusChartInstanceRef.current = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: statusResumo.map((item) => item.status),
+        datasets: [
+          {
+            label: "Total por Status",
+            data: statusResumo.map((item) => item.quantidade),
+            backgroundColor: ["#3b82f6", "#f87171", "#10b981"],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+      },
+    });
+
+    return () => {
+      if (statusChartInstanceRef.current) {
+        statusChartInstanceRef.current.destroy();
+      }
+    };
+  }, [statusResumo]);
+
+  const totalMonitorias = statusResumo.reduce((sum, item) => sum + item.quantidade, 0);
 
   return (
     <div className="flex">
       <Navbar userType={userType} />
       <div className="container mx-auto px-4 py-6 flex-1">
-        {/* Conteúdo Principal */}
         <div className="flex-1 p-10 flex flex-col items-center justify-center">
-          {/* Título da página */}
           <h2 className="text-2xl font-semibold text-[var(--foreground)] mb-6 text-center mt-4 md:mt-8">
             Bem-vindo ao Dashboard
           </h2>
 
-          {/* Layout em grid para exibir dois cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+<<<<<<< Updated upstream
             {/* Card da Agenda */}
 
             <div className="bg-[var(--card)] p-6 rounded-lg shadow-md flex flex-col items-center">
@@ -78,16 +160,45 @@ export default function Dashboard() {
                 Calendário Placeholder
 
 
+=======
+            {/* Agenda */}
+            <div className="bg-[var(--card)] p-6 rounded-lg shadow-md flex flex-col items-center w-full">
+              <h5 className="text-lg font-semibold mb-4 text-[var(--card-foreground)]">Agenda de Monitorias</h5>
+              <div className="flex flex-col gap-4 bg-[var(--accent)] border border-[var(--border)] p-4 w-full rounded-md max-h-52 overflow-auto">
+                {meetings.length === 0 ? (
+                  <p className="text-[var(--muted-foreground)] text-sm">Nenhuma reunião agendada.</p>
+                ) : (
+                  <ul className="space-y-2 w-full">
+                    {meetings.map((meeting) => (
+                      <li key={meeting.id} className="bg-white p-3 rounded shadow-sm text-sm">
+                        <p><strong>📆 Data:</strong> {meeting.date}</p>
+                        <p><strong>📚 Disciplina:</strong> {meeting.disciplina}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+>>>>>>> Stashed changes
               </div>
             </div>
 
-            {/* Card do gráfico de desempenho */}
-            <div className="bg-[var(--card)] p-6 rounded-lg shadow-md flex flex-col items-center">
+            {/* Gráfico Desempenho */}
+            <div className="bg-[var(--card)] p-6 rounded-lg shadow-md flex flex-col items-center w-full">
               <h5 className="text-lg font-semibold mb-4 text-[var(--card-foreground)]">Desempenho dos Alunos</h5>
               <div className="h-52 w-full flex justify-center items-center">
                 <canvas ref={chartRef}></canvas>
               </div>
             </div>
+
+            {/* Gráfico de Status */}
+            <div className="bg-[var(--card)] p-6 rounded-lg shadow-md flex flex-col items-center w-full">
+              <h5 className="text-lg font-semibold mb-4 text-[var(--card-foreground)]">
+                Status das Monitorias ({totalMonitorias} total)
+              </h5>
+              <div className="h-52 w-full flex justify-center items-center">
+                <canvas ref={statusChartRef}></canvas>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

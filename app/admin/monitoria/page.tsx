@@ -2,9 +2,15 @@
 import Navbar from '../../components/Navbar';
 import { useState } from "react";
 
-// Componente de cadastro de monitorias
+type Turma = {
+  id: string;
+  disciplina: string;
+  monitor: string;
+  alunos: string[];
+};
+
 export default function CadastroMonitoria() {
-  const userType: 'admin' | 'monitor' | 'student' = 'admin'; // Defina corretamente o tipo de usuário
+  const userType: 'admin' | 'monitor' | 'student' = 'admin';
   const [formData, setFormData] = useState<{
     disciplina: string;
     monitorId: string;
@@ -27,8 +33,8 @@ export default function CadastroMonitoria() {
     { id: "3", nome: "Aluno 3" },
   ];
 
-  // Lista simulada de turmas cadastradas
-  const turmas = [
+  // Estado para armazenar turmas cadastradas dinamicamente
+  const [turmas, setTurmas] = useState<Turma[]>([
     {
       id: "1",
       disciplina: "Matemática",
@@ -41,24 +47,52 @@ export default function CadastroMonitoria() {
       monitor: "Monitor 2",
       alunos: ["Aluno 3"],
     },
-  ];
+  ]);
 
-  // Função para lidar com mudanças nos campos de texto
+  // Função para lidar com mudanças nos campos de texto e select
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Função para lidar com a mudança nas seleções múltiplas de alunos
+  // Função para lidar com a seleção múltipla de alunos
   const handleAlunosChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions, (option) => option.value);
     setFormData({ ...formData, alunosIds: selectedOptions });
   };
 
-  // Função para enviar o formulário
+  // Função para enviar o formulário e adicionar turma na lista
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Monitoria cadastrada com sucesso!");
+
+    // Validar se monitor e disciplina foram selecionados
+    if (!formData.disciplina || !formData.monitorId || formData.alunosIds.length === 0) {
+      alert("Por favor, preencha todos os campos.");
+      return;
+    }
+
+    // Obter nomes do monitor e dos alunos selecionados
+    const nomeMonitor = monitores.find(m => m.id === formData.monitorId)?.nome || "Sem Monitor";
+    const nomesAlunos = alunos
+      .filter(a => formData.alunosIds.includes(a.id))
+      .map(a => a.nome);
+
+    // Criar um ID simples para a nova turma (pode usar UUID ou outro método)
+    const novoId = (turmas.length + 1).toString();
+
+    const novaTurma: Turma = {
+      id: novoId,
+      disciplina: formData.disciplina,
+      monitor: nomeMonitor,
+      alunos: nomesAlunos,
+    };
+
+    // Adicionar a nova turma ao estado
+    setTurmas([...turmas, novaTurma]);
+
+    // Resetar formulário
     setFormData({ disciplina: "", monitorId: "", alunosIds: [] });
+
+    alert("Monitoria cadastrada com sucesso!");
   };
 
   return (
@@ -67,7 +101,7 @@ export default function CadastroMonitoria() {
       <div className="max-w-6xl mx-auto p-4 mt-24 flex flex-col md:flex-row gap-8 justify-center items-start">
 
         {/* Seção da imagem */}
-        <div className="hidden md:block md:w-1/3 rounded-xl dark:bg-[#25262b]">
+        <div className="hidden md:block md:w-3/3 rounded-xl dark:bg-[#25262b]">
           <img
             src="/for_cadastastrar_monitor.svg"
             alt="Ilustração de cadastro de monitoria"
@@ -76,7 +110,7 @@ export default function CadastroMonitoria() {
         </div>
 
         {/* Coluna do formulário */}
-        <div className="w-full md:w-1/3 bg-white dark:bg-[var(--card)] border border-black/10 dark:border-[var(--border)] rounded-xl shadow-md p-8">
+        <div className="w-full md:w-3/3 bg-white dark:bg-[var(--card)] border border-black/10 dark:border-[var(--border)] rounded-xl shadow-md p-8">
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-[var(--card-foreground)] mb-4 text-center">Cadastrar Monitoria</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
             <div>
@@ -144,7 +178,7 @@ export default function CadastroMonitoria() {
         </div>
 
         {/* Coluna das turmas cadastradas */}
-        <div className="w-full md:w-1/3 bg-white dark:bg-[var(--card)] border border-black/10 dark:border-[var(--border)] rounded-xl shadow-md p-8">
+        <div className="w-full md:w-3/3 bg-white dark:bg-[var(--card)] border border-black/10 dark:border-[var(--border)] rounded-xl shadow-md p-8">
           <h3 className="text-2xl font-semibold text-gray-800 dark:text-[var(--card-foreground)] mb-4 text-center">Turmas Cadastradas</h3>
           <div className="space-y-4">
             {turmas.length === 0 ? (
