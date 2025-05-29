@@ -17,6 +17,7 @@
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.8",
+    "cookies-next": "^6.0.0",
     "framer-motion": "^12.6.3",
     "lib-jitsi-meet": "^1.0.6",
     "lucide-react": "^0.486.0",

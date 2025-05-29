@@ -1,53 +1,68 @@
 // app/api/login/route.ts
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers"; // Importar para definir cookies no servidor
+import { cookies } from "next/headers";
+import { pool } from "@/lib/db"; // Certifique-se de que o caminho para sua conexão com o banco está correto
+import bcrypt from "bcryptjs"; // Para comparar senhas criptografadas
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
-  // Simulação de usuários e IDs. Substitua pela lógica do seu banco de dados.
-  const mockAdmin = { id: 1, nome: "Admin Principal", email: "admin@exemplo.com", tipo: "admin", senhaPlana: "123456" };
-  const mockMonitor = { id: 2, nome: "Monitor Alfa", email: "monitor@exemplo.com", tipo: "monitor", senhaPlana: "123456" };
-  const mockAluno = { id: 3, nome: "Aluno Beta", email: "user@exemplo.com", tipo: "aluno", senhaPlana: "123456" }; // user no email, mas tipo aluno
+  try {
+    // 1. Buscar o usuário e seu tipo de acesso no banco de dados
+    const [rows]: any = await pool.query(
+      `
+        SELECT u.id_usuario, u.nome, u.senha, a.tipo
+        FROM usuarios u
+        INNER JOIN acessos a ON u.id_usuario = a.id_usuario
+        WHERE u.email = ?
+      `,
+      [email]
+    );
 
-  let userToAuthenticate = null;
+    const usuarios = Array.isArray(rows) ? rows : [];
 
-  if (email === mockAdmin.email && password === mockAdmin.senhaPlana) {
-    userToAuthenticate = mockAdmin;
-  } else if (email === mockMonitor.email && password === mockMonitor.senhaPlana) {
-    userToAuthenticate = mockMonitor;
-  } else if (email === mockAluno.email && password === mockAluno.senhaPlana) {
-    userToAuthenticate = mockAluno;
-  }
+    // Se nenhum usuário for encontrado com o e-mail fornecido
+    if (usuarios.length === 0) {
+      // Por segurança, retorne uma mensagem genérica para não indicar se o e-mail existe ou não
+      return new NextResponse("E-mail ou senha inválidos!", { status: 401 });
+    }
 
-  if (userToAuthenticate) {
+    const usuario = usuarios[0] as any; // Pega o primeiro usuário encontrado
+
+    // 2. Comparar a senha fornecida com a senha HASHED do banco de dados
+    const senhaCorreta = await bcrypt.compare(password, usuario.senha);
+    if (!senhaCorreta) {
+      return new NextResponse("E-mail ou senha inválidos!", { status: 401 });
+    }
+
+    // 3. Se a senha estiver correta, criar a resposta e definir os cookies
     const responsePayload = {
       success: true,
       message: "Login bem-sucedido!",
-      userId: userToAuthenticate.id,
-      role: userToAuthenticate.tipo, // O AuthContext espera 'role'
-      userName: userToAuthenticate.nome,
+      userId: usuario.id_usuario, // Pega o ID real do banco
+      role: usuario.tipo,         // Pega a role real do banco
+      userName: usuario.nome,     // Pega o nome real do banco
     };
     
     const response = NextResponse.json(responsePayload);
 
-    // Definir cookies no servidor
-    // O AuthContext também define cookies no cliente com base na resposta JSON.
-    // Os cookies httpOnly do servidor são para segurança e uso em API routes.
+    // Definir cookies no servidor (httpOnly para segurança)
     const cookieOptions = {
       path: "/",
-      httpOnly: true, // Mais seguro, não acessível via JavaScript do lado do cliente
+      httpOnly: true, // Torna o cookie inacessível via JavaScript no navegador (mais seguro)
       secure: process.env.NODE_ENV === "production", // Usar 'secure' em produção (HTTPS)
-      sameSite: "lax" as const, // 'lax' ou 'strict'
-      maxAge: 60 * 60 * 24 * 7, // 7 dias
+      sameSite: "lax" as const, // 'lax' ou 'strict' para proteção CSRF
+      maxAge: 60 * 60 * 24 * 7, // Expira em 7 dias
     };
 
-    response.cookies.set("userId", String(userToAuthenticate.id), cookieOptions);
-    response.cookies.set("userType", userToAuthenticate.tipo, cookieOptions);
-    response.cookies.set("userName", userToAuthenticate.nome, cookieOptions); // Opcional, mas útil se o middleware/API precisar
+    response.cookies.set("userId", String(usuario.id_usuario), cookieOptions);
+    response.cookies.set("userType", usuario.tipo, cookieOptions);
+    response.cookies.set("userName", usuario.nome, cookieOptions);
 
     return response;
-  }
 
-  return NextResponse.json({ error: "Credenciais inválidas", success: false }, { status: 401 });
+  } catch (error) {
+    console.error("Erro ao processar login:", error);
+    return new NextResponse("Erro interno do servidor", { status: 500 });
+  }
 }
