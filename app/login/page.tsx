@@ -54,7 +54,7 @@ export default function Login() {
       login({ email, role });
 
       if (role === "admin") router.push("/admin/dashboard"); // Caminho para o dashboard do Admin
-      else if (role === "monitor") router.push("/Monitor/dashboard"); // Caminho para o dashboard do Monitor
+      else if (role === "monitor") router.push("/monitor/dashboard"); // Caminho para o dashboard do Monitor
       else if (role === "aluno") router.push("/User/dashboard"); // Caminho para o dashboard do Aluno
     } catch (err: any) {
       console.error("Erro no login:", err);
