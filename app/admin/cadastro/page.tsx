@@ -244,7 +244,7 @@ const handleCSVImport = async () => {
   if (carregando && usuarios.length === 0 && !erro) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-        <Navbar userType="admin" />
+        <Navbar/>
         <div className="flex justify-center items-center h-[calc(100vh-4rem)]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
           <p className="ml-4 text-gray-600 dark:text-gray-300">Carregando usuários...</p>
@@ -256,7 +256,7 @@ const handleCSVImport = async () => {
   if (erro && usuarios.length === 0) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-        <Navbar userType="admin" />
+        <Navbar/>
         <div className="max-w-6xl mx-auto p-4 pt-20">
           <div className="bg-red-100 dark:bg-red-800 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded relative" role="alert">
             <strong className="font-bold">Erro ao carregar dados:</strong> {erro}
@@ -274,7 +274,7 @@ const handleCSVImport = async () => {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <Navbar userType="admin" />
+      <Navbar/>
       <div className="max-w-7xl mx-auto p-6 pt-20 sm:pt-24"> 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 mb-8">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-8 text-center">
