@@ -41,7 +41,10 @@ export default function FloatingChat() {
     mensagensEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  useEffect(scrollToBottom, [mensagensChat]);
+  // CORRIGIDO: Adicionado scrollToBottom às dependências
+  useEffect(() => {
+    scrollToBottom();
+  }, [mensagensChat, scrollToBottom]);
 
   // Efeito para buscar usuários disponíveis quando o chat é aberto e o usuário está logado
   useEffect(() => {
@@ -57,7 +60,8 @@ export default function FloatingChat() {
         setCarregando(true);
         setErroApi(null);
         try {
-          const response = await fetch(`/api/users?currentUserId=${typedUser.id}`);
+          // Assumindo que typedUser.id pode ser number, convertemos para string se a API esperar string
+          const response = await fetch(`/api/users?currentUserId=${String(typedUser.id)}`);
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || "Falha ao buscar lista de usuários.");
@@ -75,13 +79,12 @@ export default function FloatingChat() {
       };
       fetchAvailableUsers();
     }
-  }, [isOpen, user, availableUsers.length, idConversaAtualCom]); // Adicionado idConversaAtualCom e availableUsers.length para controle
+  }, [isOpen, user, availableUsers.length, idConversaAtualCom]);
 
   // Efeito para buscar mensagens da conversa atual
   useEffect(() => {
     if (!isOpen || !user || !idConversaAtualCom) {
-      // Não limpa mensagensChat aqui para permitir reabrir a conversa anterior
-      if (!idConversaAtualCom) setMensagensChat([]); // Limpa apenas se voltou para lista
+      if (!idConversaAtualCom) setMensagensChat([]);
       return;
     }
 
@@ -99,7 +102,8 @@ export default function FloatingChat() {
       setErroApi(null);
       try {
         const response = await fetch(
-          `/api/messages?idUsuarioLogado=${userIdLogado}&idOutroUsuario=${idConversaAtualCom}`
+          // Convertendo IDs para string para consistência com a API, se necessário
+          `/api/messages?idUsuarioLogado=${String(userIdLogado)}&idOutroUsuario=${idConversaAtualCom}`
         );
         if (!response.ok) {
           let errorData;
@@ -112,7 +116,7 @@ export default function FloatingChat() {
         }
         const data: MensagemChat[] = await response.json();
         setMensagensChat(data);
-        setTimeout(() => inputRef.current?.focus(), 0); // Foca no input após carregar mensagens
+        setTimeout(() => inputRef.current?.focus(), 0);
       } catch (e: unknown) {
         let msg = "Não carregou mensagens.";
         if (e instanceof Error) msg = e.message;
@@ -123,17 +127,18 @@ export default function FloatingChat() {
       }
     };
     buscarMensagens();
-  }, [isOpen, user, idConversaAtualCom]); // Executa se chat aberto, user logado, e conversa selecionada
+  }, [isOpen, user, idConversaAtualCom]);
 
   const handleIniciarConversa = (outroUsuario: UserListItem) => {
     const typedUser = user as TipoUserDoAuthContext;
-    if (typedUser.id === outroUsuario.id) {
-        setErroApi("Você não pode iniciar uma conversa consigo mesmo.");
-        return;
+    // CORRIGIDO: Comparação de IDs como strings
+    if (String(typedUser.id) === outroUsuario.id) {
+      setErroApi("Você não pode iniciar uma conversa consigo mesmo.");
+      return;
     }
     setIdConversaAtualCom(outroUsuario.id);
     setNomeConversaAtualCom(outroUsuario.nome);
-    setMensagensChat([]); // Limpa mensagens do chat anterior
+    setMensagensChat([]);
     setErroApi(null);
   };
 
@@ -142,9 +147,6 @@ export default function FloatingChat() {
     setNomeConversaAtualCom(null);
     setMensagensChat([]);
     setErroApi(null);
-    // Re-buscar lista de usuários caso ela possa ter mudado ou para resetar estado.
-    // Para simplificar, podemos assumir que a lista não muda frequentemente enquanto o chat está aberto.
-    // Se precisar de atualização constante, o useEffect de buscar usuários pode ser ajustado.
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -155,19 +157,22 @@ export default function FloatingChat() {
     const userIdLogado = typedUser.id;
     const mensagemParaEnviar = {
       conteudo: inputMensagem.trim(),
-      id_remetente: userIdLogado,
-      id_destinatario: idConversaAtualCom,
+      // CORRIGIDO: id_remetente como string
+      id_remetente: String(userIdLogado),
+      // idConversaAtualCom já é string aqui devido à guarda acima
+      id_destinatario: idConversaAtualCom, 
     };
     
     const idOtimista = Date.now();
+    // A tipagem de previaMensagem agora deve ser compatível com MensagemChat
     const previaMensagem: MensagemChat = {
-      ...mensagemParaEnviar,
+      ...mensagemParaEnviar, // id_remetente e id_destinatario já são strings
       id_mensagem: idOtimista,
       data_envio: new Date().toISOString(),
     };
     setMensagensChat((prev) => [...prev, previaMensagem]);
     setInputMensagem("");
-    inputRef.current?.focus(); // Mantém o foco no input
+    inputRef.current?.focus();
 
     try {
       const response = await fetch("/api/messages", {
@@ -189,22 +194,21 @@ export default function FloatingChat() {
     } catch (e: unknown) {
       let msg = "Não enviou msg."; 
       if (e instanceof Error) msg = e.message;
-      setErroApi(msg); // Mostra erro brevemente
+      setErroApi(msg);
       setMensagensChat((prev) => prev.filter((msg) => msg.id_mensagem !== idOtimista));
-      setInputMensagem(mensagemParaEnviar.conteudo); // Devolve mensagem ao input
-      setTimeout(() => setErroApi(null), 3000); // Limpa erro da API após 3s
+      setInputMensagem(mensagemParaEnviar.conteudo);
+      setTimeout(() => setErroApi(null), 3000);
     }
   };
 
-  if (!user) return null; // Não renderiza nada se não houver usuário logado
+  if (!user) return null;
 
-  const typedUserCurrent = user as TipoUserDoAuthContext; // Para usar no JSX
+  const typedUserCurrent = user as TipoUserDoAuthContext;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[1000]"> {/* Aumentado z-index */}
+    <div className="fixed bottom-4 right-4 z-[1000]">
       {isOpen ? (
         <div className="w-80 sm:w-96 h-[500px] flex flex-col bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700">
-          {/* Cabeçalho do Chat */}
           <div className="bg-blue-500 text-white px-4 py-3 flex justify-between items-center">
             {idConversaAtualCom && (
               <button onClick={handleVoltarParaListaDeUsuarios} className="p-1 hover:bg-blue-600 rounded-full">
@@ -221,12 +225,10 @@ export default function FloatingChat() {
             </button>
           </div>
 
-          {/* Corpo do Chat: Lista de Usuários ou Mensagens */}
           <div className="flex-grow overflow-y-auto p-1 sm:p-2 bg-gray-50 dark:bg-gray-700">
             {erroApi && <div className="p-2 text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-900/50 rounded m-1">{erroApi}</div>}
 
             {!idConversaAtualCom ? (
-              // LISTA DE USUÁRIOS
               carregando ? (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">Carregando usuários...</p>
               ) : availableUsers.length === 0 && !erroApi ? (
@@ -246,7 +248,6 @@ export default function FloatingChat() {
                 </ul>
               )
             ) : (
-              // MENSAGENS DA CONVERSA
               carregando ? (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">Carregando mensagens...</p>
               ) : mensagensChat.length === 0 && !erroApi ? (
@@ -256,17 +257,20 @@ export default function FloatingChat() {
                 {mensagensChat.map((msg) => (
                   <div
                     key={msg.id_mensagem}
-                    className={`flex ${msg.id_remetente === typedUserCurrent.id ? 'justify-end' : 'justify-start'}`}
+                    // CORRIGIDO: Comparação de IDs como strings
+                    className={`flex ${msg.id_remetente === String(typedUserCurrent.id) ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
+                      // CORRIGIDO: Comparação de IDs como strings
                       className={`max-w-[75%] py-2 px-3 rounded-xl shadow ${
-                        msg.id_remetente === typedUserCurrent.id
+                        msg.id_remetente === String(typedUserCurrent.id)
                           ? "bg-blue-500 text-white"
                           : "bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100"
                       }`}
                     >
                       <p className="text-sm break-words">{msg.conteudo}</p>
-                      <p className={`text-xs mt-1 ${msg.id_remetente === typedUserCurrent.id ? 'text-blue-200 text-right' : 'text-gray-500 dark:text-gray-400 text-left'}`}>
+                      {/* CORRIGIDO: Comparação de IDs como strings */}
+                      <p className={`text-xs mt-1 ${msg.id_remetente === String(typedUserCurrent.id) ? 'text-blue-200 text-right' : 'text-gray-500 dark:text-gray-400 text-left'}`}>
                         {new Date(msg.data_envio).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
@@ -278,7 +282,6 @@ export default function FloatingChat() {
             )}
           </div>
           
-          {/* Formulário de Envio (apenas se uma conversa estiver ativa) */}
           {idConversaAtualCom && (
             <form onSubmit={handleSubmit} className="flex p-3 gap-2 border-t dark:border-gray-700 bg-white dark:bg-gray-800">
               <input
@@ -300,7 +303,6 @@ export default function FloatingChat() {
           )}
         </div>
       ) : (
-        // Botão para Abrir o Chat
         <button
           onClick={() => setIsOpen(true)}
           className="bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"

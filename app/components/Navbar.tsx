@@ -85,8 +85,7 @@ const Navbar: React.FC = () => {
     ],
     student: [ 
       { href: '/User/dashboard', label: 'Dashboard' }, 
-      { href: '/User/agenda', label: 'Minha Agenda' },
-      { href: '/User/monitoria', label: 'Buscar Monitorias' },
+      { href: '/User/monitoria', label: 'Minhas Monitorias' },
       { href: '/User/Forum', label: 'Fórum' },
       { label: 'Sair', action: authLogout, extraClasses: 'mt-auto text-red-300 hover:bg-red-700 hover:text-white' },
     ],
