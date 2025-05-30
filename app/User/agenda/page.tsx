@@ -48,7 +48,7 @@ export default function Agenda() {
 
   return (
     <div className="flex">
-      <Navbar userType={userType} />
+      <Navbar />
       <div className="container mx-auto px-4 py-6 flex-1">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">📅 Agenda de Monitorias</h2>
 
