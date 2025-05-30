@@ -4,7 +4,6 @@ import Navbar from "../../components/Navbar"; // Certifique-se de que o caminho 
 
 export default function Agenda() {
   // Definição do tipo de usuário
-  const userType: 'admin' | 'monitor' | 'student' = 'student'; // Pode ajustar conforme necessário
 
   // Estados para gerenciar as reuniões e os dados
   const [meetings, setMeetings] = useState<{ roomName: string; date: string; turma?: string }[]>([]);
@@ -49,7 +48,7 @@ export default function Agenda() {
 
   return (
     <div className="flex">
-      <Navbar userType={userType} />
+      <Navbar/>
       <div className="container mx-auto px-4 py-6 flex-1">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">📅 Agenda de Monitorias</h2>
 
