@@ -1,53 +1,91 @@
-// app/api/login/route.ts
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers"; // Importar para definir cookies no servidor
+// 📁 app/api/login/route.ts
+import { NextResponse, NextRequest } from "next/server";
+import { pool } from '@/lib/db'; // Seu pool de conexões
+import bcrypt from 'bcrypt';   // Importe o bcrypt
+import { RowDataPacket } from "mysql2";
 
-export async function POST(req: Request) {
-  const { email, password } = await req.json();
+// Interface para o usuário como vem do banco de dados (agora com JOIN)
+interface UserFromDB extends RowDataPacket {
+  id_usuario: number;
+  nome: string;
+  email: string;
+  senha: string; // Senha hasheada do banco
+  tipo: "admin" | "monitor" | "aluno"; // Tipo vindo da tabela 'acessos'
+}
 
-  // Simulação de usuários e IDs. Substitua pela lógica do seu banco de dados.
-  const mockAdmin = { id: 1, nome: "Admin Principal", email: "admin@exemplo.com", tipo: "admin", senhaPlana: "123456" };
-  const mockMonitor = { id: 2, nome: "Monitor Alfa", email: "monitor@exemplo.com", tipo: "monitor", senhaPlana: "123456" };
-  const mockAluno = { id: 3, nome: "Aluno Beta", email: "user@exemplo.com", tipo: "aluno", senhaPlana: "123456" }; // user no email, mas tipo aluno
+export async function POST(req: NextRequest) {
+  try {
+    const { email, password } = await req.json();
 
-  let userToAuthenticate = null;
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email e senha são obrigatórios", success: false }, { status: 400 });
+    }
 
-  if (email === mockAdmin.email && password === mockAdmin.senhaPlana) {
-    userToAuthenticate = mockAdmin;
-  } else if (email === mockMonitor.email && password === mockMonitor.senhaPlana) {
-    userToAuthenticate = mockMonitor;
-  } else if (email === mockAluno.email && password === mockAluno.senhaPlana) {
-    userToAuthenticate = mockAluno;
-  }
+    // 1. Buscar o usuário e seu tipo de acesso usando JOIN
+    // Usamos INNER JOIN para garantir que o usuário só seja retornado se tiver um tipo de acesso definido.
+    // Se um usuário puder existir sem um tipo em 'acessos', use LEFT JOIN e trate o 'tipo' nulo.
+    const sqlGetUserAndAccess = `
+      SELECT 
+        u.id_usuario, 
+        u.nome, 
+        u.email, 
+        u.senha, 
+        a.tipo 
+      FROM usuarios u
+      INNER JOIN acessos a ON u.id_usuario = a.id_usuario
+      WHERE u.email = ?
+    `;
+    const [users] = await pool.execute<UserFromDB[]>(sqlGetUserAndAccess, [email]);
 
-  if (userToAuthenticate) {
+    if (users.length === 0) {
+      // Usuário não encontrado ou não possui um tipo de acesso válido em 'acessos'
+      return NextResponse.json({ error: "Credenciais inválidas ou usuário sem tipo de acesso definido", success: false }, { status: 401 });
+    }
+
+    const userFromDb = users[0];
+
+    // Se a.tipo puder ser NULL (ex: com LEFT JOIN e usuário sem entrada em acessos)
+    // você precisaria tratar isso aqui:
+    if (!userFromDb.tipo) {
+        return NextResponse.json({ error: "Tipo de acesso do usuário não definido.", success: false }, { status: 403 }); // Forbidden
+    }
+
+    // 2. Comparar a senha fornecida com a senha hasheada do banco
+    const passwordMatch = await bcrypt.compare(password, userFromDb.senha);
+
+    if (!passwordMatch) {
+      // Senha não confere
+      return NextResponse.json({ error: "Credenciais inválidas", success: false }, { status: 401 });
+    }
+
+    // 3. Usuário autenticado com sucesso
     const responsePayload = {
       success: true,
       message: "Login bem-sucedido!",
-      userId: userToAuthenticate.id,
-      role: userToAuthenticate.tipo, // O AuthContext espera 'role'
-      userName: userToAuthenticate.nome,
+      userId: userFromDb.id_usuario, // ID real do banco (number)
+      role: userFromDb.tipo,         // Role vindo da tabela 'acessos'
+      userName: userFromDb.nome,       // Nome real do banco
+      email: userFromDb.email,         // Email real do banco
     };
     
     const response = NextResponse.json(responsePayload);
 
-    // Definir cookies no servidor
-    // O AuthContext também define cookies no cliente com base na resposta JSON.
-    // Os cookies httpOnly do servidor são para segurança e uso em API routes.
     const cookieOptions = {
       path: "/",
-      httpOnly: true, // Mais seguro, não acessível via JavaScript do lado do cliente
-      secure: process.env.NODE_ENV === "production", // Usar 'secure' em produção (HTTPS)
-      sameSite: "lax" as const, // 'lax' ou 'strict'
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
       maxAge: 60 * 60 * 24 * 7, // 7 dias
     };
 
-    response.cookies.set("userId", String(userToAuthenticate.id), cookieOptions);
-    response.cookies.set("userType", userToAuthenticate.tipo, cookieOptions);
-    response.cookies.set("userName", userToAuthenticate.nome, cookieOptions); // Opcional, mas útil se o middleware/API precisar
+    response.cookies.set("userId", String(userFromDb.id_usuario), cookieOptions);
+    response.cookies.set("userType", userFromDb.tipo, cookieOptions); // userFromDb.tipo já é string e do tipo correto
+    response.cookies.set("userName", userFromDb.nome, cookieOptions);
 
     return response;
-  }
 
-  return NextResponse.json({ error: "Credenciais inválidas", success: false }, { status: 401 });
+  } catch (error) {
+    console.error("Erro no servidor durante o login:", error);
+    return NextResponse.json({ error: "Erro interno do servidor", success: false }, { status: 500 });
+  }
 }
