@@ -2,7 +2,7 @@
 import Navbar from '../../components/Navbar'; // Caminho correto para Navbar
 import { useEffect, useRef, useState } from "react"; // Importa hooks necessários do React
 import Chart from "chart.js/auto"; // Importa o Chart.js para criação de gráficos
-import { getCookie } from 'cookies-next'; // Importa a função para ler cookies (instale se não tiver: npm install cookies-next)
+import { getCookie } from 'cookies-next'; // Importa a função para ler cookies
 import axios from 'axios'; // Para fazer requisições HTTP
 
 // Interfaces para os dados da API (resposta de SUCESSO)
@@ -22,79 +22,109 @@ interface ErrorResponse {
   message?: string;
 }
 
+// Interface para um item da lista de monitorias do aluno
+interface StudentMeeting {
+  id: number;
+  date: string; // Data formatada
+  disciplina: string;
+  assunto: string;
+  status: string;
+}
 
 export default function Dashboard() {
-  const userType: 'admin' | 'monitor' | 'student' = 'student'; // Defina corretamente o tipo de usuário
+  const userType: 'admin' | 'monitor' | 'student' = 'student'; // Define corretamente o tipo de usuário
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
 
-  const [userName, setUserName] = useState<string>(''); // Estado para armazenar o nome do usuário
+  const [userName, setUserName] = useState<string>('');
   const [chartLabels, setChartLabels] = useState<string[]>([]); // Para os labels do gráfico
   const [chartNotas, setChartNotas] = useState<number[]>([]); // Para os dados do gráfico
 
-  const [loading, setLoading] = useState(true); // Estado de carregamento
-  const [error, setError] = useState<string | null>(null); // Estado de erro
+  const [meetings, setMeetings] = useState<StudentMeeting[]>([]); // Novo estado para a lista de monitorias
+  const [loadingMeetings, setLoadingMeetings] = useState(true); // Estado de carregamento da lista
+  const [errorMeetings, setErrorMeetings] = useState<string | null>(null); // Estado de erro da lista
 
-  // useEffect para buscar dados da API e ler o cookie
+  const [loading, setLoading] = useState(true); // Estado de carregamento geral do dashboard
+  const [error, setError] = useState<string | null>(null); // Estado de erro geral do dashboard
+
+  // useEffect principal para buscar TODOS os dados do dashboard
   useEffect(() => {
     async function fetchData() {
-      setLoading(true);
+      setLoading(true); // Inicia carregamento geral
       setError(null);
+
+      // --- Buscar dados de Desempenho (Gráfico) ---
       try {
-        // Lendo o cookie 'userName' para exibir no título
         const storedUserName = getCookie('userName');
         if (storedUserName) {
           setUserName(String(storedUserName));
         }
 
-        // Fazendo a requisição para a API de conceitos do aluno
         const response = await axios.get<DashboardApiResponse | ErrorResponse>('/api/dashboard/conceitos');
         
-        // Verifica se a resposta HTTP não foi bem-sucedida (status fora do range 2xx)
         if (response.status < 200 || response.status >= 300) {
-            const errorData = response.data as ErrorResponse; // Força o tipo para a interface de erro
+            const errorData = response.data as ErrorResponse;
             throw new Error(errorData.error || errorData.message || `Erro HTTP: ${response.status}`);
         }
 
-        // Se a resposta for bem-sucedida, assume que é DashboardApiResponse
         const { userName: apiUserName, data: fetchedData } = response.data as DashboardApiResponse;
 
-        // Se o nome vier da API e for mais recente, pode usar (opcional)
         if (apiUserName && apiUserName !== userName) {
             setUserName(apiUserName);
         }
 
         if (!Array.isArray(fetchedData)) {
-            throw new Error("Formato de dados inesperado da API: 'data' não é um array.");
+            throw new Error("Formato de dados inesperado da API de desempenho: 'data' não é um array.");
         }
 
-        const labels = fetchedData.map(item => item.disciplina);
-        const notas = fetchedData.map(item => item.nota);
+        setChartLabels(fetchedData.map(item => item.disciplina));
+        setChartNotas(fetchedData.map(item => item.nota));
 
-        setChartLabels(labels);
-        setChartNotas(notas);
-
-      } catch (err: any) { // Mantém err: any para capturar erros de rede ou outros
-        console.error("Erro ao carregar dados do dashboard:", err);
-        // Tenta extrair a mensagem de erro de axios.response.data, ou do próprio erro
-        setError(err.response?.data?.error || err.response?.data?.message || err.message || "Erro desconhecido ao carregar dados.");
+      } catch (err: any) {
+        console.error("Erro ao carregar dados de desempenho do dashboard:", err);
+        setError(err.response?.data?.error || err.response?.data?.message || err.message || "Erro desconhecido ao carregar desempenho.");
       } finally {
-        setLoading(false);
+        // loading do desempenho pode ser separado ou combinado com o geral
       }
+
+      // --- Buscar Lista de Próximas Monitorias ---
+      setLoadingMeetings(true);
+      setErrorMeetings(null);
+      try {
+        const meetingsResponse = await axios.get<StudentMeeting[] | ErrorResponse>('/api/agendamentos/student-meetings');
+        
+        if (meetingsResponse.status < 200 || meetingsResponse.status >= 300) {
+            const errorData = meetingsResponse.data as ErrorResponse;
+            throw new Error(errorData.error || errorData.message || `Erro HTTP: ${meetingsResponse.status}`);
+        }
+
+        if (!Array.isArray(meetingsResponse.data)) {
+            throw new Error("Formato de dados inesperado da API de agendamentos: não é um array.");
+        }
+        setMeetings(meetingsResponse.data as StudentMeeting[]);
+
+      } catch (err: any) {
+        console.error("Erro ao carregar lista de monitorias:", err);
+        setErrorMeetings(err.response?.data?.error || err.response?.data?.message || err.message || "Erro desconhecido ao carregar monitorias.");
+      } finally {
+        setLoadingMeetings(false); // Finaliza carregamento da lista
+      }
+
+      setLoading(false); // Finaliza carregamento geral do dashboard
     }
+    
     fetchData();
 
-    // Cleanup: destrói a instância do gráfico ao desmontar o componente
     return () => {
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();
       }
     };
-  }, []); // Executa apenas uma vez no carregamento
+  }, []);
 
-  // useEffect para criar/atualizar o gráfico quando os dados (labels, notas) mudam
+  // useEffect para criar/atualizar o gráfico de desempenho
   useEffect(() => {
-    if (chartRef.current && chartLabels.length > 0) {
+    if (chartRef.current && chartLabels.length > 0 && !loading && !error) { // Verifica loading/error geral ou específico do gráfico
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();
       }
@@ -162,15 +192,33 @@ export default function Dashboard() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Card da Agenda de Monitorias (Agora, Lista de Próximas Monitorias) */}
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h5 className="text-lg font-semibold mb-4">Agenda de Monitorias</h5>
-              <div className="flex justify-center items-center bg-gray-100 border h-52 text-gray-500 text-lg">
-                Calendário Placeholder
+              <h5 className="text-lg font-semibold mb-4">Minhas Monitorias</h5>
+              <div className="max-h-64 overflow-y-auto"> {/* Adiciona scroll se a lista for longa */}
+                {loadingMeetings && <p className="text-gray-500 text-sm">Carregando suas monitorias...</p>}
+                {errorMeetings && <p className="text-red-500 text-sm">{errorMeetings}</p>}
+                {!loadingMeetings && !errorMeetings && meetings.length === 0 && (
+                  <p className="text-gray-500 text-sm">Nenhuma monitoria encontrada para você.</p>
+                )}
+                {meetings.length > 0 && (
+                  <ul className="space-y-3">
+                    {meetings.map((meeting) => (
+                      <li key={meeting.id} className="bg-gray-50 p-3 rounded shadow-sm text-sm">
+                        <p><strong>Data:</strong> {meeting.date}</p>
+                        <p><strong>Disciplina:</strong> {meeting.disciplina}</p>
+                        <p><strong>Assunto:</strong> {meeting.assunto}</p>
+                        <p><strong>Status:</strong> {meeting.status}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
 
+            {/* Card do gráfico de desempenho */}
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h5 className="text-lg font-semibold mb-4">Desempenho dos Alunos</h5>
+              <h5 className="text-lg font-semibold mb-4">Desempenho Acadêmico</h5>
               <div className="h-52">
                 {chartLabels.length > 0 ? (
                   <canvas ref={chartRef}></canvas>
