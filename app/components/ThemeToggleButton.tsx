@@ -10,13 +10,7 @@ const ThemeToggleButton = () => {
   return (
     <motion.button
       onClick={toggleDarkMode}
-      className={`flex items-center justify-center p-2.5 rounded-full 
-        ${
-          darkMode
-            ? "bg-[var(--card)] hover:bg-[var(--accent)]"
-            : "bg-[var(--secondary)] hover:bg-[var(--accent)]"
-        }
-        transition-colors duration-200`}
+      className="nav-toggle-btn flex items-center justify-center p-2.5 rounded-full shadow-md bg-white/10 backdrop-blur-sm"
       aria-label="Alternar tema"
       whileTap={{ scale: 0.9 }}
       whileHover={{ scale: 1.05 }}

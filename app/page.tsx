@@ -20,7 +20,7 @@ const featureSections = [
     id: "usuarios",
     title: "Aulas sincronas com alunos",
     description: "As aulas são agendas e são ao vivo, possibilitando sanar dúvidas durante a aula",
-    expanded: true, // Inicia expandido por padrão
+    expanded: true,
   },
   {
     id: "administrador",
@@ -97,14 +97,17 @@ export default function Page() {
               </button>
               <div className="absolute left-0 mt-2 w-48 bg-[var(--card)] rounded-md shadow-soft-lg border border-[var(--border)] opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200">
                 <div className="py-2">
-                  <Link href="/tecnologia/nextjs" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
+                  <Link href="https://nextjs.org/docs" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
                     Next.js
                   </Link>
-                  <Link href="/tecnologia/javascript" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
-                    JavaScript
+                  <Link href="https://www.typescriptlang.org/docs/" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
+                    Typescript
                   </Link>
-                  <Link href="/tecnologia/mysql" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
+                  <Link href="https://dev.mysql.com/doc/" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
                     MySQL
+                  </Link>
+                  <Link href="https://v2.tailwindcss.com/docs" className="block px-4 py-2 text-sm text-[var(--card-foreground)] hover:bg-[var(--accent)] transition-colors">
+                    Tailwind
                   </Link>
                 </div>
               </div>
@@ -247,7 +250,7 @@ export default function Page() {
               <h1 className="text-4xl md:text-5xl font-bold text-[var(--foreground)] leading-tight mb-6">
               Bem-vindo a Monitoria Digital, uma plataforma para gerenciar monitorias.
               </h1>
-              <p className="text-[var(--muted-foreground)] text-lg mb-8">
+              <p className="text-[var(--foreground)] text-lg mb-8">
               Faça o acompanhamento e controle de o desempenho dos alunos e agende suas atividades. 
               Nosso sistema oferece uma experiência intuitiva e eficiente para monitores e alunos.
               </p>
@@ -277,20 +280,20 @@ export default function Page() {
             <div className="lg:w-1/2 mb-10 lg:mb-0">
               <div className="space-y-4">
                 {featureSections.map((section) => (
-                  <div key={section.id} className="border border-[var(--border)] rounded-md overflow-hidden bg-[var(--card)] shadow-sm">
+                  <div key={section.id} className="border border-[var(--border)] rounded-md overflow-hidden bg-blue-500 shadow-sm">
                     <button
-                      className="w-full text-left px-4 py-3 flex justify-between items-center font-medium text-[var(--foreground)] hover:bg-[var(--accent)] transition"
+                      className="w-full text-left px-4 py-3 flex justify-between items-center font-medium text-white hover:bg-blue-600 transition"
                       onClick={() => toggleSection(section.id)}
                     >
                       <span>{section.title}</span>
                       {expandedSections[section.id] ? (
-                        <MinusIcon className="h-5 w-5 text-[var(--primary)]" />
+                        <MinusIcon className="h-5 w-5 text-white" />
                       ) : (
-                        <PlusIcon className="h-5 w-5 text-[var(--primary)]" />
+                        <PlusIcon className="h-5 w-5 text-white" />
                       )}
                     </button>
                     {expandedSections[section.id] && (
-                      <div className="px-4 py-3 border-t border-[var(--border)] text-[var(--muted-foreground)]">
+                      <div className="px-4 py-3 border-t border-blue-400 text-white">
                         <p>{section.description}</p>
                       </div>
                     )}
@@ -349,28 +352,6 @@ export default function Page() {
                   </div>
                 </a>
               </div>
-            </div>
-
-            {/* Coluna 2 - Links Rápidos */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Links Rápidos</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="#sobre" className="hover:text-destaque transition">
-                    Sobre Nós
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#funcionalidades" className="hover:text-destaque transition">
-                    Funcionalidades
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#precos" className="hover:text-destaque transition">
-                    Seja um monitor
-                  </Link>
-                </li>
-              </ul>
             </div>
 
             {/* Coluna 4 - Inscrição na Newsletter */}

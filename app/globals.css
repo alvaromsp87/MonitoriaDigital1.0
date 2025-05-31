@@ -26,6 +26,9 @@
   --border: #e5e5e5;
   --input: #e5e5e5;
   --ring: #0070f3;
+  --nav-btn-bg: rgba(255, 255, 255, 0.1);
+  --nav-btn-hover: rgba(0, 0, 0, 0.1);
+  --nav-btn-text: inherit;
 }
 
 [class~="dark"] {
@@ -49,6 +52,9 @@
   --border: #333333;
   --input: #333333;
   --ring: #0070f3;
+  --nav-btn-bg: rgba(0, 0, 0, 0.2);
+  --nav-btn-hover: rgba(255, 255, 255, 0.1);
+  --nav-btn-text: inherit;
 }
 
 /* Base styles */
@@ -94,6 +100,18 @@ button {
 button.secondary {
   background-color: var(--secondary);
   color: var(--secondary-foreground);
+}
+
+/* Estilos específicos para botões de navegação */
+.nav-toggle-btn {
+  background-color: var(--nav-btn-bg);
+  color: var(--nav-btn-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.nav-toggle-btn:hover {
+  background-color: var(--nav-btn-hover);
 }
 
 /* Text styles */

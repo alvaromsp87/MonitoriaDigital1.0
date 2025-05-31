@@ -83,7 +83,10 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
       <div className="fixed inset-x-0 top-0 z-50">
         <div className={`${getNavbarColor()} flex justify-between items-center p-4`}>
           <div className="flex-1">
-            <button onClick={toggleMenu} className="p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200">
+            <button 
+              onClick={toggleMenu} 
+              className="nav-toggle-btn p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200"
+            >
               <Menu className="w-6 h-6 text-white" />
             </button>
           </div>
@@ -120,7 +123,7 @@ const Navbar: React.FC<NavbarProps> = ({ userType }) => {
                 </h3>
                 <button
                   onClick={toggleMenu}
-                  className="p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200"
+                  className="nav-toggle-btn p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200"
                   aria-label="Fechar menu"
                 >
                   <X className="w-6 h-6 text-white" />
