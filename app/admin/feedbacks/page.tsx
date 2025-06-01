@@ -3,7 +3,6 @@ import Navbar from '../../components/Navbar'; // Caminho correto para Navbar
 import { useState } from "react"; // Importação do hook useState do React para gerenciar o estado
 
 export default function Feedbacks() {
-  const userType: 'admin' | 'monitor' | 'student' = 'admin';
 
   // Estado para armazenar os feedbacks recebidos, agora com campo monitoria
   const [feedbacks, setFeedbacks] = useState([
@@ -34,7 +33,7 @@ export default function Feedbacks() {
 
   return (
     <div className="flex min-h-screen bg-[var(--background)]">
-      <Navbar userType={userType} />
+      <Navbar/>
       <div className="container mx-auto px-2 py-4 flex-1">
         <main className="flex-1 p-2 md:p-4">
           <h2 className="text-center text-2xl font-bold text-[var(--foreground)] mb-3">Feedbacks</h2>
