@@ -230,7 +230,7 @@ const jitsiApiRef = useRef<any>(null);
     setShowFeedback(false); 
   };
   
-  const handleJitsiApiReady = (externalApi: IJitsiMeetExternalApi) => { // Tipado aqui
+  const handleJitsiApiReady = (externalApi: any) => { 
     jitsiApiRef.current = externalApi;
     console.log("Jitsi API (React SDK) está pronta!");
     if (externalApi && typeof externalApi.addEventListener === 'function') {
@@ -433,7 +433,7 @@ const jitsiApiRef = useRef<any>(null);
                     displayName: user?.nome || "Aluno", // User não é null aqui por causa das verificações anteriores
                     email: user?.email
                 }}
-                onApiReady={(externalApi: IJitsiMeetExternalApi) => handleJitsiApiReady(externalApi) } // Tipado aqui
+               onApiReady={(externalApi: any) => handleJitsiApiReady(externalApi) } 
                 getIFrameRef={(iframeRef) => { 
                     if (iframeRef) {
                         iframeRef.style.height = '100%';
