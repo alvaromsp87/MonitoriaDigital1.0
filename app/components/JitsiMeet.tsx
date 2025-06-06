@@ -1,3 +1,4 @@
+//app/components/JitsiMeet.tsx
 "use client"; // Next.js usa "use client" para componentes interativos
 import { useEffect, useRef } from "react";
 
@@ -33,3 +34,6 @@ const JitsiMeet = ({ roomName, userName }: { roomName: string; userName: string 
 };
 
 export default JitsiMeet;
+
+
+

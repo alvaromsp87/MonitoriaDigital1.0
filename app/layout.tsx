@@ -1,7 +1,6 @@
 "use client";
 
 import Footer from './components/footer';
-import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -20,8 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <FloatingChat />
             </div>
             <Footer />
-            <Script src="https://meet.jit.si/external_api.js" strategy="lazyOnload" />
-          </AuthProvider>
+            </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
