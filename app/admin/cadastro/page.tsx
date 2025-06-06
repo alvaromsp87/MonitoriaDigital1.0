@@ -1,14 +1,15 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import Papa from 'papaparse';
 import { 
-  PlusCircleIcon, 
-  PencilIcon, 
-  TrashIcon, 
-  ArrowUpTrayIcon,
-  ArrowDownTrayIcon,
-  XCircleIcon 
+  PlusCircleIcon, 
+  PencilIcon, 
+  TrashIcon, 
+  ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
+  XCircleIcon,
+  MagnifyingGlassIcon // NOVO: Ícone para a barra de pesquisa
 } from '@heroicons/react/24/outline';
 
 type Usuario = {
@@ -45,6 +46,11 @@ export default function CadastroPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [file, setFile] = useState<File | null>(null);
+ 
+
+  // NOVO: Estados para os filtros e campo de pesquisa
+  const [termoPesquisa, setTermoPesquisa] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState(''); // '' representa 'Todos os Tipos'
 
   const carregarUsuarios = useCallback(async () => {
     try {
@@ -70,7 +76,19 @@ export default function CadastroPage() {
   useEffect(() => {
     carregarUsuarios();
   }, [carregarUsuarios]);
+  const usuariosFiltrados = useMemo(() => {
+    return usuarios.filter(usuario => {
+      // Condição do campo de pesquisa (nome ou email)
+      const correspondePesquisa = 
+        usuario.nome.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+        usuario.email.toLowerCase().includes(termoPesquisa.toLowerCase());
+      
+      // Condição do filtro de tipo de usuário
+      const correspondeTipo = filtroTipo ? usuario.tipo === filtroTipo : true;
 
+      return correspondePesquisa && correspondeTipo;
+    });
+  }, [usuarios, termoPesquisa, filtroTipo]);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -358,8 +376,34 @@ const handleCSVImport = async () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white p-6 sm:p-8">Usuários Cadastrados</h3>
-          <div className="overflow-x-auto">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white p-6 sm:p-8 pb-0">Usuários Cadastrados ({usuariosFiltrados.length})</h3>          
+          {/* NOVO: Barra de Filtros e Pesquisa */}
+<div className="p-6 sm:p-8 pt-6 flex flex-col sm:flex-row gap-4">
+  <div className="relative flex-grow">
+    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" />
+    <input 
+      type="text"
+      placeholder="Pesquisar por nome ou email..."
+      value={termoPesquisa}
+      onChange={(e) => setTermoPesquisa(e.target.value)}
+      className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+    />
+  </div>
+
+  <div className="flex-shrink-0">
+    <select 
+      value={filtroTipo}
+      onChange={(e) => setFiltroTipo(e.target.value)}
+      className="w-full sm:w-auto border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+    >
+      <option value="">Todos os Tipos</option>
+      <option value="admin">Administrador</option>
+      <option value="monitor">Monitor</option>
+      <option value="aluno">Aluno</option>
+    </select>
+  </div>
+</div>
+<div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -370,54 +414,49 @@ const handleCSVImport = async () => {
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {erro && usuarios.length === 0 ? ( 
-                    <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-sm text-red-500 dark:text-red-400">
-                            Erro ao carregar usuários: {erro}
-                        </td>
-                    </tr>
-                ) : !carregando && usuarios.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                      Nenhum usuário cadastrado.
-                    </td>
-                  </tr>
-                ) : (
-                  usuarios.map((usuario) => (
-                    <tr key={usuario.id_usuario} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{usuario.nome}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{usuario.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${usuario.tipo === 'admin' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                            usuario.tipo === 'monitor' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                            'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-100'}`}>
-                          {usuario.tipo}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-3">
-                          {/* Botão Editar Atualizado */}
-                          <button 
-                            onClick={() => handleEdit(usuario)} 
-                            className="bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white font-semibold py-1 px-3 rounded-md shadow-sm transition flex items-center gap-1"
-                          >
-                            <PencilIcon className="h-4 w-4" />Editar
-                          </button>
-                          {/* Botão Excluir Atualizado */}
-                          <button 
-                            onClick={() => handleDelete(usuario.id_usuario)} 
-                            className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-semibold py-1 px-3 rounded-md shadow-sm transition flex items-center gap-1"
-                          >
-                            <TrashIcon className="h-4 w-4" />Excluir
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
+             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+  {/* MODIFICADO: Usa 'usuariosFiltrados' para renderizar e checar o estado vazio */}
+  {carregando ? (
+      <tr><td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">Carregando usuários...</td></tr>
+  ) : usuariosFiltrados.length === 0 ? (
+    <tr>
+      <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        Nenhum usuário encontrado com os filtros aplicados.
+      </td>
+    </tr>
+  ) : (
+    usuariosFiltrados.map((usuario) => ( // ✅ CORRIGIDO AQUI
+      <tr key={usuario.id_usuario} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{usuario.nome}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{usuario.email}</td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+            ${usuario.tipo === 'admin' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+             usuario.tipo === 'monitor' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+             'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-100'}`}>
+            {usuario.tipo}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+  <div className="flex items-center space-x-3">
+    <button 
+      onClick={() => handleEdit(usuario)} 
+      className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-1 px-3 rounded-md shadow-sm transition flex items-center gap-1"
+    >
+      <PencilIcon className="h-4 w-4" />Editar
+    </button>
+    <button 
+      onClick={() => handleDelete(usuario.id_usuario)} 
+      className="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md shadow-sm transition flex items-center gap-1"
+    >
+      <TrashIcon className="h-4 w-4" />Excluir
+    </button>
+  </div>
+</td>
+      </tr>
+    ))
+  )}
+</tbody>
             </table>
           </div>
         </div>

@@ -6,12 +6,19 @@ import Navbar from '../../components/Navbar';
 import Link from 'next/link';
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/solid';
 
-// Interface para os dados que a API GET /api/agendamentos retorna
+interface SessaoMonitoriaAgrupada {
+  id_representativo: number;
+  nome_disciplina: string;
+  conteudo_programatico: string;
+  status: string;
+  data_agendamento: string;
+  nomes_alunos: string; // String com nomes dos alunos separados por vírgula
+  nome_monitor: string;
+}
 interface AgendamentoDoMonitorAPI {
   id_agendamento: number;
   data_agendada: string;
   status: string;
-  // turma: string | null; // Coluna 'turma' não existe em 'mentorias' no schema atual
   disciplina: string; // CORRIGIDO: Espera 'disciplina' da API
   room_name: string;
   aluno?: string; // Nome do aluno associado ao agendamento
@@ -30,14 +37,6 @@ type Meeting = {
   observacoes?: string;
 };
 
-// Interface para o que /api/mentorias (GET, para o dropdown) retorna
-interface MentoriaApiDataParaDropdown {
-  id_mentoria: number;
-  disciplina_nome: string;
-  aluno_nome: string;
-  conteudo_programatico: string;
-  status_mentoria: string;
-}
 
 // Interface para o estado do select no frontend
 type MentoriaParaSelecao = {
@@ -59,23 +58,32 @@ export default function AgendaMonitor() {
   const [errorMentoriasDropdown, setErrorMentoriasDropdown] = useState<string | null>(null);
 
 
+// ✅ SEU NOVO CÓDIGO - Cole este bloco no lugar do anterior
+
   useEffect(() => {
-    const fetchMentoriasDisponiveisParaDropdown = async () => { 
+    const fetchMentoriasAgrupadasParaDropdown = async () => {
       setLoadingMentoriasDropdown(true);
       setErrorMentoriasDropdown(null);
       try {
-        const res = await fetch("/api/mentorias"); 
+        // 1. MUDANÇA: Buscando da nova rota que retorna dados agrupados
+        const res = await fetch("/api/monitorias-agrupadas");
+
         if (!res.ok) {
-            const errData = await res.json().catch(() => ({error: "Falha ao carregar opções de mentoria"}));
-            throw new Error(errData.error || `HTTP error ${res.status}`);
+          const errData = await res.json().catch(() => ({ error: "Falha ao carregar opções de mentoria" }));
+          throw new Error(errData.error || `HTTP error ${res.status}`);
         }
         
-        const data: MentoriaApiDataParaDropdown[] = await res.json();
+        // 2. MUDANÇA: Os dados agora vêm no formato da interface 'SessaoMonitoriaAgrupada'
+        const data: SessaoMonitoriaAgrupada[] = await res.json();
 
-        const formatado: MentoriaParaSelecao[] = data.map(m => ({
-          id_mentoria: m.id_mentoria,
-          textoDisplay: `${m.disciplina_nome} - Aluno: ${m.aluno_nome} (Assunto: ${m.conteudo_programatico.substring(0, 20)}${m.conteudo_programatico.length > 20 ? '...' : ''}) - Status: ${m.status_mentoria} [ID: ${m.id_mentoria}]`
+        // 3. MUDANÇA: A formatação agora cria um texto de exibição para o GRUPO
+        const formatado: MentoriaParaSelecao[] = data.map(sessao => ({
+          // O 'value' da opção será o ID que representa o grupo
+          id_mentoria: sessao.id_representativo,
+          // O texto exibido agora é muito mais limpo e informativo
+          textoDisplay: `${sessao.nome_disciplina} - ${sessao.conteudo_programatico} (Monitor: ${sessao.nome_monitor}) - Alunos: ${sessao.nomes_alunos.split(',').length}`
         }));
+
         setMentoriasParaSelecao(formatado);
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Erro desconhecido";
@@ -85,7 +93,7 @@ export default function AgendaMonitor() {
         setLoadingMentoriasDropdown(false);
       }
     };
-    fetchMentoriasDisponiveisParaDropdown();
+    fetchMentoriasAgrupadasParaDropdown();
   }, []);
 
   const fetchAgendamentosDoMonitor = useCallback(async () => {
