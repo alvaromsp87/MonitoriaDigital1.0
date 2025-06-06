@@ -7,7 +7,6 @@ import Link from 'next/link';
 import Navbar from "../../components/Navbar"; 
 import { useAuth, User } from "../../context/AuthContext"; 
 import { JitsiMeeting as OfficialJitsiMeeting } from '@jitsi/react-sdk';
-import type { IJitsiMeetExternalApi } from '@jitsi/react-sdk'; // Importando o tipo para a API do Jitsi
 
 // JAAS_APP_ID é usado para construir o roomName para o JaaS
 const JAAS_APP_ID_CONST = "vpaas-magic-cookie-def7a752b0214eeeb6c8ee7cabfb2a6b"; // Use seu App ID real aqui
@@ -146,8 +145,7 @@ export default function AlunoMonitoriaPage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [meetingEndedSummary, setMeetingEndedSummary] = useState<MeetingParaAluno | null>(null);
   const [jwtToken, setJwtToken] = useState<string | undefined>(undefined); 
-  const jitsiApiRef = useRef<IJitsiMeetExternalApi | null>(null); // Tipado com IJitsiMeetExternalApi
-
+const jitsiApiRef = useRef<any>(null);
   // Corrigido: Usar a constante local
   const APP_ID_JAAS = JAAS_APP_ID_CONST;
 
