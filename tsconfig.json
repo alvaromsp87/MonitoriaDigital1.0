@@ -1,3 +1,4 @@
+// tsconfig.json
 {
   "compilerOptions": {
     "target": "ES2017",
@@ -32,13 +33,14 @@
     },
     "typeRoots": [
       "./node_modules/@types",
-      "./types"
+      "./types" // TypeScript procurará tipos globais aqui
     ]
   },
   "include": [
+    "next-env.d.ts",     // Coloque primeiro
+    "types/**/*.d.ts",   // Inclui todos os .d.ts da pasta types
     "**/*.ts",
     "**/*.tsx",
-    "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [
