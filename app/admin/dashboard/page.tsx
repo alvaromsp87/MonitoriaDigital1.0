@@ -2,7 +2,7 @@
 "use client";
 
 import Navbar from '../../components/Navbar';
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react"; // Removido 'JSX' daqui
 import Chart from "chart.js/auto";
 import { BarChart3, PieChart, ListChecks, AlertTriangle, CalendarDays, Loader2, Users, BookOpen } from "lucide-react";
 import { useAuth, User as TipoUserDoAuthContext } from "../../context/AuthContext";
@@ -25,11 +25,11 @@ interface AdminMeetingItem { // Todos os agendamentos no sistema
 interface AgendamentoAdminAPIItem { // Como os dados vêm da API de agendamentos para admin
   id_agendamento: number | string;
   data_agendada: string;
-  disciplina?: string;
-  aluno?: string; // Nome do aluno
-  monitor_nome?: string; // Nome do monitor
+  disciplina?: string; 
+  aluno?: string; 
+  monitor_nome?: string; 
   status?: string;
-  observacoes?: string;
+  observacoes?: string; 
   room_name?: string;
 }
 interface StatusResumoAdminItem { // Status de todos os agendamentos
@@ -49,6 +49,141 @@ const getChartColors = (numColors: number): string[] => {
   }
   return colors;
 };
+
+// =====================================================================================================================
+// COMPONENTE: AdminMeetingsAside
+// =====================================================================================================================
+interface AdminMeetingsAsideProps {
+  adminMeetings: AdminMeetingItem[];
+  loadingAdminMeetings: boolean;
+  errorAdminMeetings: string | null;
+  // ALTERAÇÃO AQUI: De JSX.Element para React.ReactElement
+  renderLoading: (text?: string) => React.ReactElement; 
+  renderError: (message: string | null) => React.ReactElement;
+  renderNoData: (message: string) => React.ReactElement;
+}
+
+function AdminMeetingsAside({ adminMeetings: initialAdminMeetings, loadingAdminMeetings, errorAdminMeetings, renderLoading, renderError, renderNoData }: AdminMeetingsAsideProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('TODOS');
+  const [filteredMeetings, setFilteredMeetings] = useState<AdminMeetingItem[]>([]);
+
+  useEffect(() => {
+    console.log("------------------------------------------");
+    console.log("useEffect do AdminMeetingsAside ativado!");
+    console.log("initialAdminMeetings recebido:", initialAdminMeetings);
+    console.log("searchTerm atual:", searchTerm);
+    console.log("statusFilter atual:", statusFilter);
+
+    if (initialAdminMeetings && initialAdminMeetings.length > 0) {
+      let currentFiltered = initialAdminMeetings;
+
+      if (statusFilter !== 'TODOS') {
+        console.log(`Aplicando filtro de status: ${statusFilter}`);
+        currentFiltered = currentFiltered.filter(meeting => {
+          const match = meeting.status === statusFilter;
+          return match;
+        });
+        console.log("Após filtro de status, resultados:", currentFiltered.length);
+      }
+
+      if (searchTerm) {
+        console.log(`Aplicando filtro de pesquisa por texto: "${searchTerm}"`);
+        const lowerCaseSearchTerm = searchTerm.toLowerCase();
+        currentFiltered = currentFiltered.filter(meeting => {
+          const match = 
+            meeting.disciplina.toLowerCase().includes(lowerCaseSearchTerm) ||
+            meeting.monitor_nome?.toLowerCase().includes(lowerCaseSearchTerm) ||
+            meeting.aluno_nome?.toLowerCase().includes(lowerCaseSearchTerm) ||
+            meeting.observacoes?.toLowerCase().includes(lowerCaseSearchTerm);
+          return match;
+        });
+        console.log("Após filtro de texto, resultados:", currentFiltered.length);
+      }
+
+      setFilteredMeetings(currentFiltered);
+      console.log("FilteredMeetings final:", currentFiltered.length, currentFiltered);
+    } else {
+      setFilteredMeetings([]);
+      console.log("initialAdminMeetings está vazio ou nulo. Nenhum agendamento para filtrar.");
+    }
+    console.log("------------------------------------------");
+  }, [searchTerm, statusFilter, initialAdminMeetings]);
+
+  return (
+    <aside className="lg:col-span-1 bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-xl shadow-lg border">
+      <div className="flex items-center mb-5">
+        <CalendarDays className="w-6 h-6 mr-3 text-teal-500" />
+        <h2 className="text-xl font-semibold">Todos Agendamentos ({filteredMeetings.length})</h2> 
+      </div>
+
+      <div className="mb-3">
+        <input
+          type="text"
+          placeholder="Pesquisar agendamentos..."
+          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      <div className="mb-4">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        >
+          <option value="TODOS">Todos os Status</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="pendente">Pendente</option>
+          <option value="realizada">Realizada</option> 
+          <option value="cancelado">Cancelado</option>   
+        </select>
+      </div>
+
+      <div className="max-h-[calc(18rem+18rem+2rem+2rem)] sm:max-h-[calc(20rem+20rem+3rem+2rem)] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+        {loadingAdminMeetings && renderLoading("Carregando todos agendamentos...")}
+        {errorAdminMeetings && renderError(errorAdminMeetings)}
+        
+        {!loadingAdminMeetings && !errorAdminMeetings && initialAdminMeetings.length === 0 && renderNoData("Nenhum agendamento no sistema.")}
+
+        {!loadingAdminMeetings && !errorAdminMeetings && initialAdminMeetings.length > 0 && filteredMeetings.length === 0 && (searchTerm || statusFilter !== 'TODOS') && (
+            renderNoData("Nenhum agendamento encontrado com os filtros aplicados.")
+        )}
+
+        {filteredMeetings.length > 0 && (
+          <ul className="divide-y dark:divide-gray-700">
+            {filteredMeetings.map((meeting) => (
+              <li key={meeting.id} className="py-3.5 first:pt-0 last:pb-0">
+                <div className="flex justify-between items-center">
+                  <p className="font-medium text-sm">{meeting.disciplina}</p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${ 
+                    meeting.status === 'confirmado' ? 'bg-green-100 text-green-800' : 
+                    meeting.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' : 
+                    meeting.status === 'realizada' ? 'bg-blue-100 text-blue-800' : 
+                    meeting.status === 'cancelado' ? 'bg-red-100 text-red-800' : 
+                    'bg-gray-100 text-gray-800' 
+                  }`}> {meeting.status} </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5"> {meeting.date} </p>
+                {meeting.monitor_nome && ( <p className="text-xs text-gray-500 mt-0.5"> Monitor(a): {meeting.monitor_nome} </p> )}
+                {meeting.aluno_nome && ( <p className="text-xs text-gray-500 mt-0.5"> Aluno(a): {meeting.aluno_nome} </p> )}
+                {meeting.observacoes && ( <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5 italic"> Obs: {meeting.observacoes} </p> )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="mt-8 text-center">
+        <Link href="/admin/monitoria" className="btn-primary w-full text-sm"> Gerenciar Monitorias (Admin) </Link>
+      </div>
+    </aside>
+  );
+}
+// =====================================================================================================================
+// FIM DO COMPONENTE AdminMeetingsAside
+// =====================================================================================================================
+
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -138,14 +273,13 @@ export default function AdminDashboard() {
     setLoadingAdminMeetings(true);
     setErrorAdminMeetings(null);
     try {
-      // API usará o role 'admin' (cookies) para retornar todos os agendamentos
       const response = await fetch(`/api/agendamentos?resumo=true`); 
       if (!response.ok) { 
           const errorData = await response.json().catch(() => ({ error: "Erro ao buscar todos os agendamentos" }));
           throw new Error(errorData.error || `Erro HTTP Agendamentos: ${response.status}`); 
       }
       const dados = await response.json();
-      console.log('Dados recebidos para todos agendamentos (Admin/dashboard):', dados);
+      console.log('Dados recebidos para todos agendamentos (Admin/dashboard) da API:', dados);
       if (!Array.isArray(dados)) throw new Error("Formato inesperado (todos agendamentos).");
       
       const formatados: AdminMeetingItem[] = (dados as AgendamentoAdminAPIItem[]).map((item) => ({
@@ -154,19 +288,23 @@ export default function AdminDashboard() {
         disciplina: item.disciplina || "Não especificada",
         aluno_nome: item.aluno || "Não informado",
         monitor_nome: item.monitor_nome || "Não informado",
-        status: item.status || "Não informado",
+        status: item.status || "Não informado", 
         observacoes: item.observacoes,
         room_name: item.room_name
       })).sort((a,b) => {
           const parseDate = (dateStr: string) => {
             const parts = dateStr.split(', ');
             const dateParts = parts[0].split('/');
-            return new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]), 
+            let year = parseInt(dateParts[2]);
+            if (year < 100) year += 2000; 
+            
+            return new Date(year, parseInt(dateParts[1]) - 1, parseInt(dateParts[0]), 
                             parseInt(parts[1].split(':')[0]), parseInt(parts[1].split(':')[1])).getTime();
           };
           return parseDate(b.date) - parseDate(a.date);
       });
       setAdminMeetings(formatados);
+      console.log('Dados formatados e setados em adminMeetings (Admin/dashboard):', formatados);
     } catch (err: unknown) { 
         const message = err instanceof Error ? err.message : "Erro desconhecido";
         setErrorAdminMeetings(`Falha ao carregar todos agendamentos: ${message}.`);
@@ -202,7 +340,7 @@ export default function AdminDashboard() {
     return () => { if (adminStatusChartInstanceRef.current) adminStatusChartInstanceRef.current.destroy(); };
   }, [fetchAdminStatusResumo, typedUser]);
 
-   useEffect(() => {
+    useEffect(() => {
     if (adminStatusResumo.length > 0 && adminStatusChartRef.current && !loadingAdminStatus && !errorAdminStatus) {
         if (adminStatusChartInstanceRef.current) adminStatusChartInstanceRef.current.destroy();
         const ctx = adminStatusChartRef.current.getContext("2d");
@@ -278,33 +416,17 @@ export default function AdminDashboard() {
             </section>
           </div>
 
-          <aside className="lg:col-span-1 bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-xl shadow-lg border">
-            <div className="flex items-center mb-5"> <CalendarDays className="w-6 h-6 mr-3 text-teal-500" /> <h2 className="text-xl font-semibold">Todos Agendamentos ({adminMeetings.length})</h2> </div>
-            <div className="max-h-[calc(18rem+18rem+2rem+2rem)] sm:max-h-[calc(20rem+20rem+3rem+2rem)] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-              {loadingAdminMeetings && renderLoading("Carregando todos agendamentos...")}
-              {errorAdminMeetings && renderError(errorAdminMeetings)}
-              {!loadingAdminMeetings && !errorAdminMeetings && adminMeetings.length === 0 && renderNoData("Nenhum agendamento no sistema.")}
-              {adminMeetings.length > 0 && (
-                <ul className="divide-y dark:divide-gray-700">
-                  {adminMeetings.map((meeting) => (
-                    <li key={meeting.id} className="py-3.5 first:pt-0 last:pb-0">
-                      <div className="flex justify-between items-center">
-                        <p className="font-medium text-sm">{meeting.disciplina}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${ meeting.status === 'CONFIRMADO' ? 'bg-green-100 text-green-800' : meeting.status === 'PENDENTE' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800' }`}> {meeting.status} </span>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5"> {meeting.date} </p>
-                      {meeting.monitor_nome && ( <p className="text-xs text-gray-500 mt-0.5"> Monitor(a): {meeting.monitor_nome} </p> )}
-                      {meeting.aluno_nome && ( <p className="text-xs text-gray-500 mt-0.5"> Aluno(a): {meeting.aluno_nome} </p> )}
-                      {meeting.observacoes && ( <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5 italic"> Obs: {meeting.observacoes} </p> )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="mt-8 text-center"> <Link href="/admin/monitoria" className="btn-primary w-full text-sm"> Gerenciar Monitorias (Admin) </Link> </div>
-          </aside>
+          <AdminMeetingsAside 
+            adminMeetings={adminMeetings}
+            loadingAdminMeetings={loadingAdminMeetings}
+            errorAdminMeetings={errorAdminMeetings}
+            renderLoading={renderLoading}
+            renderError={renderError}
+            renderNoData={renderNoData}
+          />
+
         </div>
-         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
             <Link href="/admin/cadastro" className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-shadow border">
                 <div className="flex items-center text-blue-600 dark:text-blue-400">
                     <Users className="w-8 h-8 mr-3"/>
@@ -313,7 +435,7 @@ export default function AdminDashboard() {
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Cadastrar, editar e remover usuários (alunos, monitores, administradores).</p>
             </Link>
             <Link href="/admin/feedbacks" className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-shadow border">
-                 <div className="flex items-center text-green-600 dark:text-green-400">
+                   <div className="flex items-center text-green-600 dark:text-green-400">
                     <BookOpen className="w-8 h-8 mr-3"/>
                     <h3 className="text-xl font-semibold">Visualizar Feedbacks</h3>
                 </div>
